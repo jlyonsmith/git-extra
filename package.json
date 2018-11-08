@@ -1,0 +1,57 @@
+{
+  "name": "bitbucket-tool",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=8.0"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "description": "BitBucket Tool",
+  "scripts": {
+    "build": "babel src -d dist -s --ignore *.test.js",
+    "debug:bit": "babel-node --inspect-brk src/bit.js",
+    "test": "jest $*"
+  },
+  "bin": {
+    "bit": "dist/bit.js"
+  },
+  "files": [
+    "dist/**"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jlyonsmith/bitbucket-tool.git"
+  },
+  "keywords": [
+    "bitbucket",
+    "git",
+    "cli",
+    "tool"
+  ],
+  "author": "John Lyon-Smith",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jlyonsmith/bitbucket-tool/issues"
+  },
+  "homepage": "https://github.com/jlyonsmith/bitbucket-tool#readme",
+  "dependencies": {
+    "autobind-decorator": "^2.1.0",
+    "chalk": "^2.1.0",
+    "consul": "^0.34.0",
+    "flat": "^4.1.0",
+    "json5": "^0.5.1",
+    "minimist": "^1.2.0",
+    "tmp": "0.0.33"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.0",
+    "jest": "^21.1.0"
+  }
+}
