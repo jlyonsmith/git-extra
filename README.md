@@ -1,8 +1,7 @@
-# Extended Commands for the `consul` CLI
+# BitBucket Tool
 
 ## Summary
 
-This tool provides some extra features to the `consul` command line tool.
+A tool for performing BitBucket operations from the command line. Currently supported commands:
 
-- `export-json` to export a tree of key/values as JSON.
-- `import-json` to import a tree of key/values from JSON/JSON5.
+- `pull-request` - Create, modify, list or remove pull requests from the command line.
