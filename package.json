@@ -1,21 +1,21 @@
 {
-  "name": "bitbucket-tool",
+  "name": "@jlyonsmith/bitbucket-tool",
   "version": "1.0.0",
   "engines": {
-    "node": ">=8.0"
+    "node": ">=10.0"
   },
   "os": [
     "darwin",
     "linux"
   ],
-  "description": "BitBucket Tool",
+  "description": "BitBucket CLI Tool",
   "scripts": {
     "build": "babel src -d dist -s --ignore *.test.js",
     "debug:bit": "babel-node --inspect-brk src/bit.js",
     "test": "jest $*"
   },
   "bin": {
-    "bit": "dist/bit.js"
+    "bit": "dist/bitbucket.js"
   },
   "files": [
     "dist/**"
@@ -39,10 +39,12 @@
   "dependencies": {
     "autobind-decorator": "^2.1.0",
     "chalk": "^2.1.0",
+    "command-exists": "^1.2.8",
     "consul": "^0.34.0",
     "flat": "^4.1.0",
     "json5": "^0.5.1",
     "minimist": "^1.2.0",
+    "opn": "^5.4.0",
     "tmp": "0.0.33"
   },
   "devDependencies": {
