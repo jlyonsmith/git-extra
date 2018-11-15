@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { BitBucketTool } from "./BitBucketTool"
+import { BitbucketTool } from "./BitbucketTool"
 import chalk from "chalk"
 import path from "path"
 
@@ -14,7 +14,7 @@ const log = {
 }
 
 const debug = process.argv.includes("--debug")
-const tool = new BitBucketTool(path.basename(process.argv[1], ".js"), log)
+const tool = new BitbucketTool(path.basename(process.argv[1], ".js"), log)
 
 tool
   .run(process.argv.slice(2))

@@ -7,7 +7,7 @@ import autobind from "autobind-decorator"
 import { promises as fs } from "fs"
 
 @autobind
-export class BitBucketTool {
+export class BitbucketTool {
   constructor(toolName, log) {
     this.toolName = toolName
     this.log = log
