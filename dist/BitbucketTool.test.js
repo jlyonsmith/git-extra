@@ -6,6 +6,7 @@ var _tmp = _interopRequireDefault(require("tmp"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const toolName = "bucket";
 let tmpDirObj = null;
 beforeAll(() => {
   tmpDirObj = _tmp.default.dirSync();
@@ -36,7 +37,7 @@ function getOutput(fn) {
 
 test("--help", done => {
   const mockLog = getMockLog();
-  const tool = new _BitbucketTool.BitbucketTool("bit", mockLog);
+  const tool = new _BitbucketTool.BitbucketTool(toolName, mockLog);
   return tool.run(["--help"]).then(exitCode => {
     expect(exitCode).toBe(0);
     expect(getOutput(mockLog.info)).toEqual(expect.stringContaining("--help"));
@@ -45,7 +46,7 @@ test("--help", done => {
 });
 test("--version", done => {
   const mockLog = getMockLog();
-  const tool = new _BitbucketTool.BitbucketTool("bit", mockLog);
+  const tool = new _BitbucketTool.BitbucketTool(toolName, mockLog);
   return tool.run(["--version"]).then(exitCode => {
     expect(exitCode).toBe(0);
     expect(getOutput(mockLog.info)).toEqual(expect.stringMatching(/^v/));

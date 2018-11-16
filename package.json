@@ -17,7 +17,7 @@
     "deploy": "npm publish"
   },
   "bin": {
-    "bit": "dist/bucket.js"
+    "bucket": "dist/bucket.js"
   },
   "files": [
     "dist/**"
