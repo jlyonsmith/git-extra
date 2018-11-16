@@ -87,6 +87,11 @@ export class BitbucketTool {
     this.log.warning("No appropriate git remote was found")
   }
 
+  async pullRequest() {
+    // TODO: Implement pull request creation
+    this.log.warning("Not yet implemented")
+  }
+
   async run(argv) {
     const options = {
       string: ["remote"],
@@ -124,6 +129,8 @@ Create, modify, list or remove pull requests.
 `)
           return 0
         }
+
+        await this.pullRequest()
         break
 
       case "browse":
@@ -133,11 +140,12 @@ Create, modify, list or remove pull requests.
 
 Description:
 
-Browse to the current repository in your browser. Optionally, open a specific .
+Browse to the current repository in your browser.
 
 Options:
 
-  --upstream, -u      Use the remote named 'upstream', 'parent' or 'official'
+  --upstream, -u      Use the remote named 'upstream', 'parent' or 'official' to
+                      open the upstream repository for a fork.
 `)
           return 0
         }
@@ -149,14 +157,15 @@ Options:
       case "help":
       default:
         this.log.info(`
-BitBucket Tool
+Bitbucket Tool
 
 Usage: ${this.toolName} <command> ...
 
-Provides command line BitBucket integration.
+Provides command line Bitbucket integration.
 
 Commands:
-  pull-request     Create, modify, list or remove pull requests
+  browse            Browse to the current or parent repository
+  pull-request      Create, modify, list or remove pull requests
 
 Global Options:
   --help      Displays this help
