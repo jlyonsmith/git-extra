@@ -1,5 +1,5 @@
 {
-  "name": "@jlyonsmith/bitbucket-tool",
+  "name": "bitbucket-tool",
   "version": "1.0.0",
   "engines": {
     "node": ">=10.0"
