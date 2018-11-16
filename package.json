@@ -11,8 +11,9 @@
   "description": "Bitbucket CLI",
   "scripts": {
     "build": "babel src -d dist -s --ignore *.test.js",
-    "debug:bit": "babel-node --inspect-brk src/bit.js",
-    "test": "jest $*"
+    "debug:bucket": "babel-node --inspect-brk src/bucket.js",
+    "test": "jest",
+    "test:debug": "babel-node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand"
   },
   "bin": {
     "bit": "dist/bitbucket.js"
