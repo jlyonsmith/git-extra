@@ -68,16 +68,38 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
     });
   }
 
-  async browse() {
+  async getRemotes() {
     await this.ensureCommands(["git"]);
     const result = await execAsync("git remote -vv");
     const output = await streamToString(result.stdout);
-    const re = new RegExp("^(?<remote>[a-zA-Z0-9-]+)\\s+git@(?<site>bitbucket\\.org|github\\.com):(?<user>[a-zA-Z0-9-]+)/(?<slug>[a-zA-Z0-9-]+).git\\s+\\(fetch\\)$", "gm");
+    const re = new RegExp("^(?<name>[a-zA-Z0-9-]+)\\s+git@(?<site>bitbucket\\.org|github\\.com):(?<user>[a-zA-Z0-9-]+)/(?<slug>[a-zA-Z0-9-]+).git\\s+\\(fetch\\)$", "gm");
+    let remotes = [];
     let arr = null;
 
     while ((arr = re.exec(output)) !== null) {
-      if (this.args.upstream && arr.groups.remote.match(/upstream|official|parent/) || !this.args.upstream && arr.groups.remote === "origin") {
-        const url = `https://${arr.groups.site}/${arr.groups.user}/${arr.groups.slug}`;
+      const {
+        name,
+        site,
+        user,
+        slug
+      } = arr.groups;
+      remotes.push({
+        name,
+        site,
+        user,
+        slug
+      });
+    }
+
+    return remotes;
+  }
+
+  async browse(upstream) {
+    const remotes = await this.getRemotes();
+
+    for (const remote of remotes) {
+      if (upstream && remote.name.match(/upstream|official|parent/) || !upstream && remote.name === "origin") {
+        const url = `https://${remote.site}/${remote.user}/${remote.slug}`;
         this.log.info(`Opening ${url}...`);
         (0, _opn.default)(url, {
           wait: false
@@ -91,7 +113,20 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
 
   async pullRequest() {
     // TODO: Implement pull request creation
-    this.log.warning("Not yet implemented");
+    const remotes = await this.getRemotes();
+
+    for (const remote of remotes) {
+      if (remote.name.match(/upstream|official|parent/)) {
+        const url = `https://${remote.site}/${remote.user}/${remote.slug}/pull-request/new`;
+        this.log.info(`Opening ${url}...`);
+        (0, _opn.default)(url, {
+          wait: false
+        });
+        return;
+      }
+    }
+
+    this.log.warning("No appropriate git upstream repository was found");
   }
 
   async run(argv) {
@@ -105,27 +140,27 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
         remote: "origin"
       }
     };
-    this.args = (0, _minimist.default)(argv, options);
+    const args = (0, _minimist.default)(argv, options);
 
-    if (this.args.version) {
+    if (args.version) {
       this.log.info(`v${_version.fullVersion}`);
       return 0;
     }
 
-    let command = this.args._[0];
+    let command = args._[0];
     command = command ? command.toLowerCase() : "help";
-    const subCommand = this.args._[1];
+    const subCommand = args._[1];
 
     switch (command) {
       case "pull-request":
       case "prq":
         // TODO: Make configurable
-        if (this.args.help && !subCommand) {
+        if (args.help && !subCommand) {
           this.log.info(`Usage: ${this.toolName} pull-request <options>
 
 Description:
 
-Create, modify, list or remove pull requests.
+Create a new pull requests.
 `);
           return 0;
         }
@@ -136,7 +171,7 @@ Create, modify, list or remove pull requests.
       case "browse":
       case "brw":
         // TODO: Make configurable
-        if (this.args.help && !subCommand) {
+        if (args.help && !subCommand) {
           this.log.info(`Usage: ${this.toolName} browse <options>
 
 Description:
@@ -151,7 +186,7 @@ Options:
           return 0;
         }
 
-        await this.browse();
+        await this.browse(args.upstream);
         break;
 
       case "help":
