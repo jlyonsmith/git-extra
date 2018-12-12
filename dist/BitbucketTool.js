@@ -116,8 +116,6 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
     const remotes = await this.getRemotes();
 
     for (const remote of remotes) {
-      console.log(remote);
-
       if (remote.name === "origin") {
         const url = `https://${remote.site}/${remote.user}/${remote.slug}/pull-request/new`;
         this.log.info(`Opening '${url}'...`);
