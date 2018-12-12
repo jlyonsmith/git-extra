@@ -102,7 +102,6 @@ export class BitbucketTool {
     const remotes = await this.getRemotes()
 
     for (const remote of remotes) {
-      console.log(remote)
       if (remote.name === "origin") {
         const url = `https://${remote.site}/${remote.user}/${
           remote.slug
