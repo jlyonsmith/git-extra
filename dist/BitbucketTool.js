@@ -100,7 +100,7 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
     for (const remote of remotes) {
       if (upstream && remote.name.match(/upstream|official|parent/) || !upstream && remote.name === "origin") {
         const url = `https://${remote.site}/${remote.user}/${remote.slug}`;
-        this.log.info(`Opening ${url}...`);
+        this.log.info(`Opening '${url}'...`);
         (0, _opn.default)(url, {
           wait: false
         });
@@ -120,7 +120,7 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
 
       if (remote.name === "origin") {
         const url = `https://${remote.site}/${remote.user}/${remote.slug}/pull-request/new`;
-        this.log.info(`Opening ${url}...`);
+        this.log.info(`Opening '${url}'...`);
         (0, _opn.default)(url, {
           wait: false
         });
@@ -128,7 +128,7 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
       }
     }
 
-    this.log.warning("No appropriate git origin repository was found");
+    this.log.warning("No appropriate git repository was found to create a PR for");
   }
 
   async run(argv) {
