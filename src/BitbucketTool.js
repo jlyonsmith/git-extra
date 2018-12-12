@@ -88,7 +88,7 @@ export class BitbucketTool {
       ) {
         const url = `https://${remote.site}/${remote.user}/${remote.slug}`
 
-        this.log.info(`Opening ${url}...`)
+        this.log.info(`Opening '${url}'...`)
         opn(url, { wait: false })
         return
       }
@@ -102,17 +102,20 @@ export class BitbucketTool {
     const remotes = await this.getRemotes()
 
     for (const remote of remotes) {
-      if (remote.name.match(/upstream|official|parent/)) {
+      console.log(remote)
+      if (remote.name === "origin") {
         const url = `https://${remote.site}/${remote.user}/${
           remote.slug
         }/pull-request/new`
-        this.log.info(`Opening ${url}...`)
+        this.log.info(`Opening '${url}'...`)
         opn(url, { wait: false })
         return
       }
     }
 
-    this.log.warning("No appropriate git upstream repository was found")
+    this.log.warning(
+      "No appropriate git repository was found to create a PR for"
+    )
   }
 
   async run(argv) {

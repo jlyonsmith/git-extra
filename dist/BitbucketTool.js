@@ -116,7 +116,9 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
     const remotes = await this.getRemotes();
 
     for (const remote of remotes) {
-      if (remote.name.match(/upstream|official|parent/)) {
+      console.log(remote);
+
+      if (remote.name === "origin") {
         const url = `https://${remote.site}/${remote.user}/${remote.slug}/pull-request/new`;
         this.log.info(`Opening ${url}...`);
         (0, _opn.default)(url, {
@@ -126,7 +128,7 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
       }
     }
 
-    this.log.warning("No appropriate git upstream repository was found");
+    this.log.warning("No appropriate git origin repository was found");
   }
 
   async run(argv) {
