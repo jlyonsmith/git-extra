@@ -14,7 +14,7 @@
     "debug:git-extra": "babel-node --inspect-brk src/git-extra.js",
     "test": "jest --coverage",
     "test:debug": "babel-node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand",
-    "deploy": "npm publish"
+    "deploy": "npm publish --access public"
   },
   "bin": {
     "git-extra": "dist/git-extra.js"
