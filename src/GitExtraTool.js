@@ -1,7 +1,6 @@
 import parseArgs from "minimist"
 import { fullVersion } from "./version"
 import autobind from "autobind-decorator"
-import { promises as fs } from "fs"
 import cp from "child_process"
 import commandExists from "command-exists"
 import stream from "stream"
@@ -35,10 +34,18 @@ function streamToString(readable) {
 const execAsync = promisify(cp.exec)
 
 @autobind
-export class BitbucketTool {
+export class GitExtraTool {
   constructor(toolName, log) {
-    this.toolName = toolName
-    this.log = log
+    const options = typeof toolName === "object" ? toolName : null
+
+    if (options) {
+      this.toolName = options.toolName
+      this.log = options.log
+      this.debug = options.debug
+    } else {
+      this.toolName = toolName
+      this.log = log
+    }
   }
 
   async ensureCommands(cmds) {
@@ -78,15 +85,30 @@ export class BitbucketTool {
     return remotes
   }
 
+  async getBranch() {
+    const result = await execAsync("git rev-parse --abbrev-ref HEAD")
+    const branch = streamToString(result.stdout).trim()
+
+    if (branch === "HEAD") {
+      branch = "master"
+    }
+
+    return branch
+  }
+
   async browse(upstream) {
     const remotes = await this.getRemotes()
+    const branch = await this.getBranch()
 
     for (const remote of remotes) {
       if (
         (upstream && remote.name.match(/upstream|official|parent/)) ||
         (!upstream && remote.name === "origin")
       ) {
-        const url = `https://${remote.site}/${remote.user}/${remote.slug}`
+        const isGitHub = remote.site === "github.com"
+        const url = `https://${remote.site}/${remote.user}/${remote.slug}/${
+          isGitHub ? "tree" : "src"
+        }/${branch}`
 
         this.log.info(`Opening '${url}'...`)
         opn(url, { wait: false })
@@ -130,6 +152,8 @@ export class BitbucketTool {
     }
 
     const args = parseArgs(argv, options)
+
+    this.debug = args.debug
 
     if (args.version) {
       this.log.info(`v${fullVersion}`)

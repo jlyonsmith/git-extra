@@ -1,5 +1,5 @@
 {
-  "name": "bitbucket-tool",
+  "name": "@johnls/git-extra",
   "version": "1.2.2",
   "engines": {
     "node": ">=10.0"
@@ -8,26 +8,27 @@
     "darwin",
     "linux"
   ],
-  "description": "Bitbucket CLI",
+  "description": "Extra git commands for working with BitBucket and GitHub",
   "scripts": {
-    "build": "babel src -d dist -s --ignore *.test.js",
-    "debug:bucket": "babel-node --inspect-brk src/bucket.js",
-    "test": "jest",
+    "build": "rm -rf dist && babel src -d dist -s --ignore *.test.js",
+    "debug:git-extra": "babel-node --inspect-brk src/git-extra.js",
+    "test": "jest --coverage",
     "test:debug": "babel-node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand",
     "deploy": "npm publish"
   },
   "bin": {
-    "bucket": "dist/bucket.js"
+    "git-extra": "dist/git-extra.js"
   },
   "files": [
     "dist/**"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jlyonsmith/bitbucket-tool.git"
+    "url": "git+https://github.com/jlyonsmith/git-extra.git"
   },
   "keywords": [
     "bitbucket",
+    "github",
     "git",
     "cli",
     "tool"
@@ -35,32 +36,25 @@
   "author": "John Lyon-Smith",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jlyonsmith/bitbucket-tool/issues"
+    "url": "https://github.com/jlyonsmith/git-extra/issues"
   },
-  "homepage": "https://github.com/jlyonsmith/bitbucket-tool#readme",
+  "homepage": "https://github.com/jlyonsmith/git-extra#readme",
   "dependencies": {
-    "autobind-decorator": "^2.1.0",
-    "chalk": "^2.1.0",
+    "autobind-decorator": "^2.4.0",
+    "chalk": "^2.4.2",
     "command-exists": "^1.2.8",
-    "consul": "^0.34.0",
-    "flat": "^4.1.0",
-    "json5": "^0.5.1",
     "minimist": "^1.2.0",
-    "opn": "^5.4.0",
-    "tmp": "0.0.33"
+    "opn": "^5.4.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.1.5",
-    "@babel/core": "^7.1.5",
-    "@babel/node": "^7.0.0",
-    "@babel/plugin-proposal-class-properties": "^7.1.0",
-    "@babel/plugin-proposal-decorators": "^7.1.6",
-    "@babel/plugin-proposal-optional-chaining": "^7.0.0",
-    "@babel/plugin-syntax-object-rest-spread": "^7.0.0",
-    "@babel/preset-env": "^7.1.5",
-    "babel-core": "^7.0.0-bridge.0",
-    "babel-jest": "^23.6.0",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "jest-cli": "^23.6.0"
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.3",
+    "@babel/node": "^7.2.2",
+    "@babel/plugin-proposal-class-properties": "^7.3.3",
+    "@babel/plugin-proposal-decorators": "^7.3.0",
+    "@babel/plugin-proposal-optional-chaining": "^7.2.0",
+    "@babel/plugin-syntax-object-rest-spread": "^7.2.0",
+    "@babel/preset-env": "^7.3.1",
+    "jest-cli": "^24.1.0"
   }
 }

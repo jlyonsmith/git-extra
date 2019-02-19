@@ -3,15 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.BitbucketTool = void 0;
+exports.GitExtraTool = void 0;
 
 var _minimist = _interopRequireDefault(require("minimist"));
 
 var _version = require("./version");
 
 var _autobindDecorator = _interopRequireDefault(require("autobind-decorator"));
-
-var _fs = require("fs");
 
 var _child_process = _interopRequireDefault(require("child_process"));
 
@@ -49,10 +47,18 @@ function streamToString(readable) {
 
 const execAsync = (0, _util.promisify)(_child_process.default.exec);
 
-let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool {
+let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
   constructor(toolName, log) {
-    this.toolName = toolName;
-    this.log = log;
+    const options = typeof toolName === "object" ? toolName : null;
+
+    if (options) {
+      this.toolName = options.toolName;
+      this.log = options.log;
+      this.debug = options.debug;
+    } else {
+      this.toolName = toolName;
+      this.log = log;
+    }
   }
 
   async ensureCommands(cmds) {
@@ -94,12 +100,25 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
     return remotes;
   }
 
+  async getBranch() {
+    const result = await execAsync("git rev-parse --abbrev-ref HEAD");
+    const branch = streamToString(result.stdout).trim();
+
+    if (branch === "HEAD") {
+      branch = "master";
+    }
+
+    return branch;
+  }
+
   async browse(upstream) {
     const remotes = await this.getRemotes();
+    const branch = await this.getBranch();
 
     for (const remote of remotes) {
       if (upstream && remote.name.match(/upstream|official|parent/) || !upstream && remote.name === "origin") {
-        const url = `https://${remote.site}/${remote.user}/${remote.slug}`;
+        const isGitHub = remote.site === "github.com";
+        const url = `https://${remote.site}/${remote.user}/${remote.slug}/${isGitHub ? "tree" : "src"}/${branch}`;
         this.log.info(`Opening '${url}'...`);
         (0, _opn.default)(url, {
           wait: false
@@ -141,6 +160,7 @@ let BitbucketTool = (0, _autobindDecorator.default)(_class = class BitbucketTool
       }
     };
     const args = (0, _minimist.default)(argv, options);
+    this.debug = args.debug;
 
     if (args.version) {
       this.log.info(`v${_version.fullVersion}`);
@@ -215,5 +235,5 @@ Global Options:
 
 }) || _class;
 
-exports.BitbucketTool = BitbucketTool;
-//# sourceMappingURL=BitbucketTool.js.map
+exports.GitExtraTool = GitExtraTool;
+//# sourceMappingURL=GitExtraTool.js.map

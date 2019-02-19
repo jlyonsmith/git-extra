@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { BitbucketTool } from "./BitbucketTool"
+import { GitExtraTool } from "./GitExtraTool"
 import chalk from "chalk"
 import path from "path"
 
@@ -13,8 +13,7 @@ const log = {
   },
 }
 
-const debug = process.argv.includes("--debug")
-const tool = new BitbucketTool(path.basename(process.argv[1], ".js"), log)
+const tool = new GitExtraTool(path.basename(process.argv[1], ".js"), log)
 
 tool
   .run(process.argv.slice(2))
@@ -23,7 +22,7 @@ tool
   })
   .catch((error) => {
     process.exitCode = 200
-    if (debug) {
+    if (tool.debug) {
       console.error(error)
     }
     log.error(error.message)

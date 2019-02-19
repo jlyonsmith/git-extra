@@ -53,4 +53,4 @@ test("--version", done => {
     done();
   });
 });
-//# sourceMappingURL=BitbucketTool.test.js.map
+//# sourceMappingURL=GitExtraTool.test.js.map

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 
-var _BitbucketTool = require("./BitbucketTool");
+var _GitExtraTool = require("./GitExtraTool");
 
 var _chalk = _interopRequireDefault(require("chalk"));
 
@@ -18,17 +18,16 @@ const log = {
     console.error(_chalk.default.yellow("warning:", [...arguments].join(" ")));
   }
 };
-const debug = process.argv.includes("--debug");
-const tool = new _BitbucketTool.BitbucketTool(_path.default.basename(process.argv[1], ".js"), log);
+const tool = new _GitExtraTool.GitExtraTool(_path.default.basename(process.argv[1], ".js"), log);
 tool.run(process.argv.slice(2)).then(exitCode => {
   process.exitCode = exitCode;
 }).catch(error => {
   process.exitCode = 200;
 
-  if (debug) {
+  if (tool.debug) {
     console.error(error);
   }
 
   log.error(error.message);
 });
-//# sourceMappingURL=bucket.js.map
+//# sourceMappingURL=git-extra.js.map
