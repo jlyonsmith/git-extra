@@ -3,51 +3,51 @@
     "package.json",
     "src/version.js",
     "scratch/version.tag.txt",
-    "scratch/version.desc.txt",
+    "scratch/version.desc.txt"
   ],
   buildFormat: "full",
   tags: {
     major: 3,
     minor: 0,
-    patch: 0,
-    build: 20190218,
+    patch: 1,
+    build: 20190311,
     revision: 0,
     tz: "America/Los_Angeles",
     startYear: "2017",
-    sequence: 12,
+    sequence: 13
   },
   fileTypes: [
     {
       name: "Node Package",
       glob: "**/package.json",
       update: {
-        search: '^(?<begin> *"version" *: *")\\d+\\.\\d+\\.\\d+(?<end>" *, *)$',
-        replace: "${begin}${major}.${minor}.${patch}${end}",
-      },
+        search: "^(?<begin> *\"version\" *: *\")\\d+\\.\\d+\\.\\d+(?<end>\" *, *)$",
+        replace: "${begin}${major}.${minor}.${patch}${end}"
+      }
     },
     {
       name: "Javascript File",
       glob: "**/version.js",
       updates: [
         {
-          search: '^(?<begin>\\s*export\\s*const\\s*version\\s*=\\s*")\\d+\\.\\d+\\.\\d+(?<end>"\\s*)$',
-          replace: "${begin}${major}.${minor}.${patch}${end}",
+          search: "^(?<begin>\\s*export\\s*const\\s*version\\s*=\\s*\")\\d+\\.\\d+\\.\\d+(?<end>\"\\s*)$",
+          replace: "${begin}${major}.${minor}.${patch}${end}"
         },
         {
-          search: '^(?<begin>\\s*export\\s*const\\s*fullVersion\\s*=\\s*")\\d+\\.\\d+\\.\\d+-\\d+\\.\\d+(?<end>"\\s*)$',
-          replace: "${begin}${major}.${minor}.${patch}-${build}.${revision}${end}",
-        },
-      ],
+          search: "^(?<begin>\\s*export\\s*const\\s*fullVersion\\s*=\\s*\")\\d+\\.\\d+\\.\\d+-\\d+\\.\\d+(?<end>\"\\s*)$",
+          replace: "${begin}${major}.${minor}.${patch}-${build}.${revision}${end}"
+        }
+      ]
     },
     {
       name: "Commit tag file",
       glob: "**/*.tag.txt",
-      write: "${major}.${minor}.${patch}",
+      write: "${major}.${minor}.${patch}"
     },
     {
       name: "Commit tag description file",
       glob: "**/*.desc.txt",
-      write: "Version ${major}.${minor}.${patch}-${build}.${revision}",
-    },
-  ],
+      write: "Version ${major}.${minor}.${patch}-${build}.${revision}"
+    }
+  ]
 }
