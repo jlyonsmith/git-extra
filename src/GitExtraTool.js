@@ -106,9 +106,13 @@ export class GitExtraTool {
         (!upstream && remote.name === "origin")
       ) {
         const isGitHub = remote.site === "github.com"
-        const url = `https://${remote.site}/${remote.user}/${remote.slug}/${
-          isGitHub ? "tree" : "src"
-        }/${branch}`
+        let url = `https://${remote.site}/${remote.user}/${remote.slug}/`
+
+        if (isGitHub) {
+          url += `tree/${branch}`
+        } else {
+          url += `src?at=${branch}`
+        }
 
         this.log.info(`Opening '${url}'...`)
         open(url, { wait: false })

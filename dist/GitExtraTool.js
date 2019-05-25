@@ -118,7 +118,14 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
     for (const remote of remotes) {
       if (upstream && remote.name.match(/upstream|official|parent/) || !upstream && remote.name === "origin") {
         const isGitHub = remote.site === "github.com";
-        const url = `https://${remote.site}/${remote.user}/${remote.slug}/${isGitHub ? "tree" : "src"}/${branch}`;
+        let url = `https://${remote.site}/${remote.user}/${remote.slug}/`;
+
+        if (isGitHub) {
+          url += `tree/${branch}`;
+        } else {
+          url += `src?at=${branch}`;
+        }
+
         this.log.info(`Opening '${url}'...`);
         (0, _open.default)(url, {
           wait: false
