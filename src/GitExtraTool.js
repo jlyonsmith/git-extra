@@ -5,7 +5,7 @@ import cp from "child_process"
 import commandExists from "command-exists"
 import stream from "stream"
 import { promisify } from "util"
-import opn from "opn"
+import open from "open"
 
 function streamToString(readable) {
   if (!(readable instanceof stream.Readable)) {
@@ -111,7 +111,7 @@ export class GitExtraTool {
         }/${branch}`
 
         this.log.info(`Opening '${url}'...`)
-        opn(url, { wait: false })
+        open(url, { wait: false })
         return
       }
     }
@@ -129,7 +129,7 @@ export class GitExtraTool {
           remote.slug
         }/pull-request/new`
         this.log.info(`Opening '${url}'...`)
-        opn(url, { wait: false })
+        open(url, { wait: false })
         return
       }
     }

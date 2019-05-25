@@ -19,7 +19,7 @@ var _stream = _interopRequireDefault(require("stream"));
 
 var _util = require("util");
 
-var _opn = _interopRequireDefault(require("opn"));
+var _open = _interopRequireDefault(require("open"));
 
 var _class;
 
@@ -120,7 +120,7 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
         const isGitHub = remote.site === "github.com";
         const url = `https://${remote.site}/${remote.user}/${remote.slug}/${isGitHub ? "tree" : "src"}/${branch}`;
         this.log.info(`Opening '${url}'...`);
-        (0, _opn.default)(url, {
+        (0, _open.default)(url, {
           wait: false
         });
         return;
@@ -138,7 +138,7 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
       if (remote.name === "origin") {
         const url = `https://${remote.site}/${remote.user}/${remote.slug}/pull-request/new`;
         this.log.info(`Opening '${url}'...`);
-        (0, _opn.default)(url, {
+        (0, _open.default)(url, {
           wait: false
         });
         return;
