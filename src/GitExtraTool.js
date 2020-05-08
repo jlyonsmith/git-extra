@@ -96,15 +96,12 @@ export class GitExtraTool {
     return branch
   }
 
-  async browse(upstream) {
+  async browse(remoteName) {
     const remotes = await this.getRemotes()
     const branch = await this.getBranch()
 
     for (const remote of remotes) {
-      if (
-        (upstream && remote.name.match(/upstream|official|parent/)) ||
-        (!upstream && remote.name === "origin")
-      ) {
+      if (remote.name === remoteName) {
         const isGitHub = remote.site === "github.com"
         let url = `https://${remote.site}/${remote.user}/${remote.slug}/`
 
@@ -120,38 +117,52 @@ export class GitExtraTool {
       }
     }
 
-    this.log.warning("No appropriate git remote was found")
+    this.log.warning(`No git remote '${remote}' was found`)
   }
 
-  async pullRequest() {
-    // TODO: Implement pull request creation
+  async pullRequest({ remoteName, upstreamRemoteName }) {
     const remotes = await this.getRemotes()
+    const branch = await this.getBranch()
+    const originRemote = remotes.find((remote) => remote.name === remoteName)
+    const upstreamRemote = remotes.find(
+      (remote) => remote.name === upstreamRemoteName
+    )
 
-    for (const remote of remotes) {
-      if (remote.name === "origin") {
-        const url = `https://${remote.site}/${remote.user}/${
-          remote.slug
-        }/pull-request/new`
-        this.log.info(`Opening '${url}'...`)
-        open(url, { wait: false })
-        return
-      }
+    if (!originRemote) {
+      this.log.error(`Remote '${remoteName}' was not found`)
+      return
     }
 
-    this.log.warning(
-      "No appropriate git repository was found to create a PR for"
-    )
+    if (!upstreamRemote) {
+      this.log.error(`Target remote '${upstreamRemoteName}' was not found`)
+      return
+    }
+
+    let url
+
+    if (originRemote.site === "github.com") {
+      // On GitHub as of May 2020 you start a PR by do a compare operation from the upstream repository
+      url = `https://${upstreamRemote.site}/${upstreamRemote.user}/${upstreamRemote.slug}/compare/${branch}...${originRemote.user}:${branch}`
+    } else {
+      // On BitBucket as of May 2020 you start a PR by doing a compare operation from the origin or upstream repository
+      url = `https://${originRemote.site}/${originRemote.user}/${originRemote.slug}/pull-request/new`
+    }
+
+    this.log.info(`Opening '${url}'...`)
+    open(url, { wait: false })
   }
 
   async run(argv) {
     const options = {
-      string: ["remote"],
-      boolean: ["help", "version", "debug", "upstream"],
+      string: ["remote", "to-remote"],
+      boolean: ["help", "version", "debug"],
       alias: {
-        u: "upstream",
+        r: "remote",
+        t: "to-remote",
       },
       default: {
         remote: "origin",
+        toRemote: "upstream",
       },
     }
 
@@ -178,12 +189,19 @@ export class GitExtraTool {
 
 Description:
 
-Create a new pull requests.
+Create a new pull request.
+
+Options:
+--remote, -r <remote>     Remote to use as source. Default is 'origin'.
+--to-remote, -t <remote>  Remote to use as destination. Default is 'upstream'.
 `)
           return 0
         }
 
-        await this.pullRequest()
+        await this.pullRequest({
+          remoteName: args.remote,
+          upstreamRemoteName: args.toRemote,
+        })
         break
 
       case "browse":
@@ -196,14 +214,12 @@ Description:
 Browse to the current repository in your browser.
 
 Options:
-
-  --upstream, -u      Use the remote named 'upstream', 'parent' or 'official' to
-                      open the upstream repository for a fork.
+  --remote, -r <remote>   Use the given remote. Default is 'origin'.
 `)
           return 0
         }
 
-        await this.browse(args.upstream)
+        await this.browse(args.remote)
 
         break
 
@@ -214,16 +230,16 @@ Bitbucket Tool
 
 Usage: ${this.toolName} <command> ...
 
-Provides command line Bitbucket integration.
+Provides simple command line GitHub and BitBucket integrations.
 
 Commands:
-  browse            Browse to the current or parent repository
-  pull-request      Create, modify, list or remove pull requests
+  browse            Browse to a remote repository
+  pull-request      Create a new pull request from a forked repository
 
 Global Options:
-  --help      Displays this help
-  --version   Displays tool version
-  --debug     Show debug output
+  --help                  Displays this help
+  --version               Displays tool version
+  --debug                 Show debug output
 `)
         return 0
     }
