@@ -6,6 +6,7 @@ import commandExists from "command-exists"
 import stream from "stream"
 import { promisify } from "util"
 import open from "open"
+import hostedGitInfo from "hosted-git-info"
 
 function streamToString(readable) {
   if (!(readable instanceof stream.Readable)) {
@@ -68,19 +69,17 @@ export class GitExtraTool {
 
     const result = await execAsync("git remote -vv")
     const output = await streamToString(result.stdout)
-    // TODO: Use hosted-git-info instead
     const re = new RegExp(
-      "^(?<name>[a-zA-Z0-9-]+)\\s+git@(?<site>bitbucket\\.org|github\\.com):(?<user>[a-zA-Z0-9-]+)/(?<slug>[a-zA-Z0-9-]+).git\\s+\\(fetch\\)$",
+      "^(?<name>[a-zA-Z0-9-]+)\\s+(?<url>.*)\\s+\\(fetch\\)$",
       "gm"
     )
-
-    let remotes = []
+    const remotes = []
     let arr = null
 
     while ((arr = re.exec(output)) !== null) {
-      const { name, site, user, slug } = arr.groups
+      const { name, url } = arr.groups
 
-      remotes.push({ name, site, user, slug })
+      remotes.push({ name, ...hostedGitInfo.fromUrl(url) })
     }
 
     return remotes
@@ -103,8 +102,8 @@ export class GitExtraTool {
 
     for (const remote of remotes) {
       if (remote.name === remoteName) {
-        const isGitHub = remote.site === "github.com"
-        let url = `https://${remote.site}/${remote.user}/${remote.slug}/`
+        const isGitHub = remote.domain === "github.com"
+        let url = `https://${remote.domain}/${remote.user}/${remote.project}/`
 
         if (isGitHub) {
           url += `tree/${branch}`
@@ -141,12 +140,12 @@ export class GitExtraTool {
 
     let url
 
-    if (originRemote.site === "github.com") {
+    if (originRemote.domain === "github.com") {
       // On GitHub as of May 2020 you start a PR by do a compare operation from the upstream repository
-      url = `https://${upstreamRemote.site}/${upstreamRemote.user}/${upstreamRemote.slug}/compare/${branch}...${originRemote.user}:${branch}`
+      url = `https://${upstreamRemote.domain}/${upstreamRemote.user}/${upstreamRemote.project}/compare/${branch}...${originRemote.user}:${branch}`
     } else {
       // On BitBucket as of May 2020 you start a PR by doing a compare operation from the origin or upstream repository
-      url = `https://${originRemote.site}/${originRemote.user}/${originRemote.slug}/pull-request/new`
+      url = `https://${originRemote.domain}/${originRemote.user}/${originRemote.project}/pull-request/new`
     }
 
     this.log.info(`Opening '${url}'...`)

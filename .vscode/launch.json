@@ -12,7 +12,7 @@
       "skipFiles": ["<node_internals>/**"],
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/babel-node",
       "program": "${workspaceFolder}/src/git-extra.js",
-      "args": ["--help"],
+      "args": ["browse"],
       "runtimeArgs": ["--nolazy"],
       "env": {
         "BABEL_ENV": "debug"

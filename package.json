@@ -44,6 +44,7 @@
     "autobind-decorator": "^2.4.0",
     "chalk": "^4.0.0",
     "command-exists": "^1.2.9",
+    "hosted-git-info": "^3.0.4",
     "minimist": "^1.2.5",
     "open": "^7.0.3",
     "tmp-promise": "^2.1.1"
