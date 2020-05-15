@@ -68,6 +68,7 @@ export class GitExtraTool {
 
     const result = await execAsync("git remote -vv")
     const output = await streamToString(result.stdout)
+    // TODO: Use hosted-git-info instead
     const re = new RegExp(
       "^(?<name>[a-zA-Z0-9-]+)\\s+git@(?<site>bitbucket\\.org|github\\.com):(?<user>[a-zA-Z0-9-]+)/(?<slug>[a-zA-Z0-9-]+).git\\s+\\(fetch\\)$",
       "gm"
@@ -152,6 +153,14 @@ export class GitExtraTool {
     open(url, { wait: false })
   }
 
+  async quickStart() {
+    // TODO: Pattern a new repository from an existing one
+    // TODO: Clone the repo
+    // TODO: Delete the existing .git directory
+    // TODO: git init again
+    // TODO: Run the .git-extra/customize script
+  }
+
   async run(argv) {
     const options = {
       string: ["remote", "to-remote"],
@@ -185,7 +194,7 @@ export class GitExtraTool {
       case "pull-request":
       case "prq": // TODO: Make configurable
         if (args.help && !subCommand) {
-          this.log.info(`Usage: ${this.toolName} pull-request <options>
+          this.log.info(`Usage: ${this.toolName} pull-request [<options>]
 
 Description:
 
@@ -207,7 +216,7 @@ Options:
       case "browse":
       case "brw": // TODO: Make configurable
         if (args.help && !subCommand) {
-          this.log.info(`Usage: ${this.toolName} browse <options>
+          this.log.info(`Usage: ${this.toolName} browse [<options>]
 
 Description:
 
@@ -223,6 +232,23 @@ Options:
 
         break
 
+      case "quick-start":
+        if (args.help && !subCommand) {
+          this.log.info(
+            `Usage: ${this.toolName} quick-start [<options>] <repo> [<directory>]
+
+Description:
+
+Quickly start a project by doing a bare clone of an existing repository, then
+running the 'git-extra-customize.js' customization script if there is one.
+`
+          )
+          return 0
+        }
+
+        await this.quickStart({ repo: args._[1], directory: args._[2] })
+        break
+
       case "help":
       default:
         this.log.info(`
@@ -235,6 +261,7 @@ Provides simple command line GitHub and BitBucket integrations.
 Commands:
   browse            Browse to a remote repository
   pull-request      Create a new pull request from a forked repository
+  quick-start       Quickly start a new project from an existing repository.
 
 Global Options:
   --help                  Displays this help
