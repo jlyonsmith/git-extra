@@ -252,16 +252,16 @@ running the 'git-extra-customize.js' customization script if there is one.
       case "help":
       default:
         this.log.info(`
-Bitbucket Tool
+Git Extra Tool
 
 Usage: ${this.toolName} <command> ...
 
-Provides simple command line GitHub and BitBucket integrations.
+Provides extra commands to support Git repos on GitHub, BitBucket and GitLab.
 
 Commands:
   browse            Browse to a remote repository
   pull-request      Create a new pull request from a forked repository
-  quick-start       Quickly start a new project from an existing repository.
+  quick-start       Quickly start a new project from an existing repository
 
 Global Options:
   --help                  Displays this help

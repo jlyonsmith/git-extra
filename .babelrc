@@ -5,5 +5,11 @@
     ["@babel/plugin-proposal-class-properties", { "loose": true }],
     "@babel/plugin-syntax-object-rest-spread",
     "@babel/plugin-proposal-optional-chaining"
-  ]
+  ],
+  "env": {
+    "debug": {
+      "sourceMaps": "inline",
+      "retainLines": true
+    }
+  }
 }
