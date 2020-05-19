@@ -3,21 +3,13 @@
 
 var _GitExtraTool = require("./GitExtraTool");
 
-var _chalk = _interopRequireDefault(require("chalk"));
-
 var _path = _interopRequireDefault(require("path"));
+
+var _Log = require("./Log");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const log = {
-  info: console.info,
-  error: function () {
-    console.error(_chalk.default.red("error:", [...arguments].join(" ")));
-  },
-  warning: function () {
-    console.error(_chalk.default.yellow("warning:", [...arguments].join(" ")));
-  }
-};
+const log = new _Log.Log();
 const tool = new _GitExtraTool.GitExtraTool(_path.default.basename(process.argv[1], ".js"), log);
 tool.run(process.argv.slice(2)).then(exitCode => {
   process.exitCode = exitCode;

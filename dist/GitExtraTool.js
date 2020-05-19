@@ -11,17 +11,31 @@ var _version = require("./version");
 
 var _autobindDecorator = _interopRequireDefault(require("autobind-decorator"));
 
-var _child_process = _interopRequireDefault(require("child_process"));
+var childProcess = _interopRequireWildcard(require("promisify-child-process"));
 
 var _commandExists = _interopRequireDefault(require("command-exists"));
 
 var _stream = _interopRequireDefault(require("stream"));
 
-var _util = require("util");
-
 var _open = _interopRequireDefault(require("open"));
 
+var _hostedGitInfo = _interopRequireDefault(require("hosted-git-info"));
+
+var _fsExtra = _interopRequireDefault(require("fs-extra"));
+
+var _path = _interopRequireDefault(require("path"));
+
+var _vm = _interopRequireDefault(require("vm"));
+
+var changeCase = _interopRequireWildcard(require("change-case"));
+
+var _prompts = _interopRequireDefault(require("prompts"));
+
 var _class;
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -45,8 +59,6 @@ function streamToString(readable) {
   });
 }
 
-const execAsync = (0, _util.promisify)(_child_process.default.exec);
-
 let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
   constructor(toolName, log) {
     const options = typeof toolName === "object" ? toolName : null;
@@ -67,7 +79,7 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
     const exists = await Promise.all(newCmds.map(cmd => (0, _commandExists.default)(cmd)));
     newCmds.forEach(cmd => {
       if (!!exists[cmd]) {
-        throw new Error(`Command '${cmd}' does not exist.  Please install it.`);
+        throw new Error(`Command '${cmd}' does not exist. Please install it.`);
       } else {
         this.cmds.add(cmd);
       }
@@ -75,25 +87,19 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
   }
 
   async getRemotes() {
-    await this.ensureCommands(["git"]);
-    const result = await execAsync("git remote -vv");
+    const result = await childProcess.exec("git remote -vv");
     const output = await streamToString(result.stdout);
-    const re = new RegExp("^(?<name>[a-zA-Z0-9-]+)\\s+git@(?<site>bitbucket\\.org|github\\.com):(?<user>[a-zA-Z0-9-]+)/(?<slug>[a-zA-Z0-9-]+).git\\s+\\(fetch\\)$", "gm");
-    let remotes = [];
+    const re = new RegExp("^(?<name>[a-zA-Z0-9-]+)\\s+(?<url>.*)\\s+\\(fetch\\)$", "gm");
+    const remotes = {};
     let arr = null;
 
     while ((arr = re.exec(output)) !== null) {
       const {
         name,
-        site,
-        user,
-        slug
+        url
       } = arr.groups;
-      remotes.push({
-        name,
-        site,
-        user,
-        slug
+      remotes[name] = _hostedGitInfo.default.fromUrl(url, {
+        noGitPlus: true
       });
     }
 
@@ -101,7 +107,7 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
   }
 
   async getBranch() {
-    const result = await execAsync("git rev-parse --abbrev-ref HEAD");
+    const result = await childProcess.exec("git rev-parse --abbrev-ref HEAD");
     const branch = streamToString(result.stdout).trim();
 
     if (branch === "HEAD") {
@@ -112,70 +118,197 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
   }
 
   async browse(remoteName) {
+    await this.ensureCommands(["git"]);
     const remotes = await this.getRemotes();
     const branch = await this.getBranch();
+    const remote = remotes[remoteName];
 
-    for (const remote of remotes) {
-      if (remote.name === remoteName) {
-        const isGitHub = remote.site === "github.com";
-        let url = `https://${remote.site}/${remote.user}/${remote.slug}/`;
-
-        if (isGitHub) {
-          url += `tree/${branch}`;
-        } else {
-          url += `src?at=${branch}`;
-        }
-
-        this.log.info(`Opening '${url}'...`);
-        (0, _open.default)(url, {
-          wait: false
-        });
-        return;
-      }
+    if (!remote) {
+      this.log.warning(`No git remote '${remote}' was found`);
+      return;
     }
 
-    this.log.warning(`No git remote '${remote}' was found`);
+    remote.committish = branch;
+    const url = remote.browse("");
+    this.log.info(`Opening '${url}'...`);
+    await (0, _open.default)(url, {
+      wait: false
+    });
   }
 
   async pullRequest({
     remoteName,
     upstreamRemoteName
   }) {
+    await this.ensureCommands(["git"]);
     const remotes = await this.getRemotes();
     const branch = await this.getBranch();
-    const originRemote = remotes.find(remote => remote.name === remoteName);
-    const upstreamRemote = remotes.find(remote => remote.name === upstreamRemoteName);
+    const originRemote = remotes[remoteName];
+    const upstreamRemote = remotes[upstreamRemoteName];
 
     if (!originRemote) {
-      this.log.error(`Remote '${remoteName}' was not found`);
-      return;
+      throw new Error(`Remote '${remoteName}' was not found`);
     }
 
     if (!upstreamRemote) {
-      this.log.error(`Target remote '${upstreamRemoteName}' was not found`);
-      return;
+      throw new Error(`Target remote '${upstreamRemoteName}' was not found`);
     }
 
     let url;
 
-    if (originRemote.site === "github.com") {
+    if (originRemote.domain === "github.com") {
       // On GitHub as of May 2020 you start a PR by do a compare operation from the upstream repository
-      url = `https://${upstreamRemote.site}/${upstreamRemote.user}/${upstreamRemote.slug}/compare/${branch}...${originRemote.user}:${branch}`;
+      url = `https://${upstreamRemote.domain}/${upstreamRemote.user}/${upstreamRemote.project}/compare/${branch}...${originRemote.user}:${branch}`;
     } else {
       // On BitBucket as of May 2020 you start a PR by doing a compare operation from the origin or upstream repository
-      url = `https://${originRemote.site}/${originRemote.user}/${originRemote.slug}/pull-request/new`;
+      url = `https://${originRemote.domain}/${originRemote.user}/${originRemote.project}/pull-request/new`;
     }
 
     this.log.info(`Opening '${url}'...`);
-    (0, _open.default)(url, {
+    await (0, _open.default)(url, {
       wait: false
     });
+  }
+
+  async quickStart(options) {
+    await this.ensureCommands(["git", "node"]);
+
+    if (!options.url) {
+      throw new Error("A repository URL or directory must be given");
+    }
+
+    const remote = _hostedGitInfo.default.fromUrl(options.url, {
+      noGitPlus: true
+    });
+
+    let dirName;
+    let repoLocation;
+
+    if (remote) {
+      repoLocation = info.toString();
+      dirName = options.dirName || remote.project;
+    } else {
+      repoLocation = options.url;
+      dirName = options.dirName || _path.default.dirname(repoLocation);
+    }
+
+    if (_fsExtra.default.existsSync(dirName)) {
+      if (options.overwrite) {
+        await _fsExtra.default.remove(dirName);
+      } else {
+        throw new Error(`Directory ${dirName} already exists; use --overwrite flag to replace`);
+      }
+    }
+
+    this.log.startSpinner(`Cloning ${repoLocation} into ${dirName}`);
+    await childProcess.exec(`git clone ${repoLocation} ${dirName}`);
+    this.log.stopSpinner();
+    this.log.startSpinner(`Resetting repository history`);
+    await _fsExtra.default.remove(_path.default.join(dirName, ".git"));
+    await childProcess.exec(`git init`, {
+      cwd: dirName
+    });
+    await childProcess.exec(`git add -A :/`, {
+      cwd: dirName
+    });
+    await childProcess.exec(`git commit -m 'Initial commit'`, {
+      cwd: dirName
+    });
+    this.log.stopSpinner();
+    let customizeScript;
+
+    try {
+      customizeScript = await _fsExtra.default.readFile(_path.default.join(dirName, "git-extra-customize.js"), {
+        encoding: "utf8"
+      });
+    } catch (error) {
+      // No customization script found
+      this.log.error(error.message);
+      return;
+    } // Full qualify dirName so we can more easily use it to ensure
+    // all customization script paths are under this directory.
+
+
+    const fullDirName = _path.default.resolve(dirName);
+
+    const qualifyPath = pathName => {
+      const fullPathName = _path.default.resolve(fullDirName, pathName);
+
+      if (!fullPathName.startsWith(fullDirName)) {
+        throw new Error(`Path ${pathName} not under ${dirName}`);
+      }
+
+      return fullPathName;
+    };
+
+    this.log.startSpinner("Customizing project");
+
+    const runContext = _vm.default.createContext({
+      ui: {
+        prompts: async promptArray => {
+          this.log.stopSpinnerNoMessage();
+          const safePrompts = promptArray.map(prompt => ({
+            type: "text",
+            name: prompt.name.toString(),
+            message: prompt.message.toString(),
+            validate: t => new RegExp(prompt.regex).test(t) || prompt.error
+          }));
+          const response = await (0, _prompts.default)(safePrompts);
+          this.log.restartSpinner();
+          return response;
+        }
+      },
+      name: {
+        pascal: changeCase.pascalCase
+      },
+      fs: {
+        readFile: async fileName => _fsExtra.default.readFile(qualifyPath(fileName), {
+          encoding: "utf8"
+        }),
+        writeFile: async (fileName, contents) => _fsExtra.default.writeFile(qualifyPath(fileName), contents),
+        remove: async pathName => _fsExtra.default.remove(qualifyPath(pathName)),
+        move: async (fromFileName, toFileName) => _fsExtra.default.move(qualifyPath(fromFileName), qualifyPath(toFileName)),
+        ensureFile: async fileName => _fsExtra.default.ensureFile(qualifyPath(fileName)),
+        mkdir: async dirName => _fsExtra.default.mkdirp(qualifyPath(dirName))
+      },
+      path: {
+        join: (...pathNames) => _path.default.join(...pathNames),
+        dirname: pathName => _path.default.dirname(pathName),
+        basename: (pathName, ext) => _path.default.basename(pathName, ext),
+        extname: pathName => _path.default.extname(pathName)
+      },
+      git: {
+        forceAdd: async fileName => childProcess.exec(`git add -f ${qualifyPath(fileName)}`, {
+          cwd: dirName
+        })
+      }
+    });
+
+    try {
+      await new _vm.default.Script("(async () => {" + customizeScript + "\n})()").runInContext(runContext);
+    } catch (error) {
+      this.log.stopSpinnerNoMessage();
+
+      if (this.debug) {
+        throw error;
+      } else {
+        throw new Error(`Customization script error. ${error.message}`);
+      }
+    }
+
+    await childProcess.exec("git add -A :/", {
+      cwd: dirName
+    });
+    await childProcess.exec("git commit -m 'After customization'", {
+      cwd: dirName
+    });
+    this.log.stopSpinner();
   }
 
   async run(argv) {
     const options = {
       string: ["remote", "to-remote"],
-      boolean: ["help", "version", "debug"],
+      boolean: ["help", "version", "debug", "overwrite"],
       alias: {
         r: "remote",
         t: "to-remote"
@@ -202,7 +335,7 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
       case "prq":
         // TODO: Make configurable
         if (args.help && !subCommand) {
-          this.log.info(`Usage: ${this.toolName} pull-request <options>
+          this.log.info(`Usage: ${this.toolName} pull-request [<options>]
 
 Description:
 
@@ -225,7 +358,7 @@ Options:
       case "brw":
         // TODO: Make configurable
         if (args.help && !subCommand) {
-          this.log.info(`Usage: ${this.toolName} browse <options>
+          this.log.info(`Usage: ${this.toolName} browse [<options>]
 
 Description:
 
@@ -240,18 +373,39 @@ Options:
         await this.browse(args.remote);
         break;
 
+      case "qst":
+      case "quick-start":
+        if (args.help && !subCommand) {
+          this.log.info(`Usage: ${this.toolName} quick-start [<options>] <repo> [<directory>]
+
+Description:
+
+Quickly start a project by doing a bare clone of an existing repository, then
+running the 'git-extra-customize.js' customization script if there is one.
+`);
+          return 0;
+        }
+
+        await this.quickStart({
+          url: args._[1],
+          dirName: args._[2],
+          overwrite: args.overwrite
+        });
+        break;
+
       case "help":
       default:
         this.log.info(`
-Bitbucket Tool
+Git Extra Tool
 
 Usage: ${this.toolName} <command> ...
 
-Provides simple command line GitHub and BitBucket integrations.
+Provides extra commands to support Git repos on GitHub, BitBucket and GitLab.
 
 Commands:
   browse            Browse to a remote repository
   pull-request      Create a new pull request from a forked repository
+  quick-start       Quickly start a new project from an existing repository
 
 Global Options:
   --help                  Displays this help
