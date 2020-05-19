@@ -277,6 +277,7 @@ export class GitExtraTool {
       }
     }
 
+    await fs.remove(path.join(dirName, "git-extra-customize.js"))
     await childProcess.exec("git add -A :/", { cwd: dirName })
     await childProcess.exec("git commit -m 'After customization'", {
       cwd: dirName,
