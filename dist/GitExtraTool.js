@@ -296,6 +296,7 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
       }
     }
 
+    await _fsExtra.default.remove(_path.default.join(dirName, "git-extra-customize.js"));
     await childProcess.exec("git add -A :/", {
       cwd: dirName
     });
