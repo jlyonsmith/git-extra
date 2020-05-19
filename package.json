@@ -43,11 +43,14 @@
   "dependencies": {
     "autobind-decorator": "^2.4.0",
     "chalk": "^4.0.0",
+    "change-case": "^4.1.1",
     "command-exists": "^1.2.9",
+    "fs-extra": "^9.0.0",
     "hosted-git-info": "^3.0.4",
     "minimist": "^1.2.5",
     "open": "^7.0.3",
-    "tmp-promise": "^2.1.1"
+    "promisify-child-process": "^4.1.0",
+    "prompts": "^2.3.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",

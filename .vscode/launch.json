@@ -8,7 +8,25 @@
       "cwd": "${workspaceFolder}",
       "type": "node",
       "request": "launch",
-      "name": "Run git-extra",
+      "name": "Run git-extra quick-start",
+      "skipFiles": ["<node_internals>/**"],
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/babel-node",
+      "program": "${workspaceFolder}/src/git-extra.js",
+      "args": [
+        "quick-start",
+        "git@github.com:jlyonsmith/node-cli-tool-template.git",
+        "scratch/new-cli-tool"
+      ],
+      "runtimeArgs": ["--nolazy"],
+      "env": {
+        "BABEL_ENV": "debug"
+      }
+    },
+    {
+      "cwd": "${workspaceFolder}",
+      "type": "node",
+      "request": "launch",
+      "name": "Run git-extra browse",
       "skipFiles": ["<node_internals>/**"],
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/babel-node",
       "program": "${workspaceFolder}/src/git-extra.js",

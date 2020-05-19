@@ -1,12 +1,16 @@
 import parseArgs from "minimist"
 import { fullVersion } from "./version"
 import autobind from "autobind-decorator"
-import cp from "child_process"
+import * as childProcess from "promisify-child-process"
 import commandExists from "command-exists"
 import stream from "stream"
-import { promisify } from "util"
 import open from "open"
 import hostedGitInfo from "hosted-git-info"
+import fs from "fs-extra"
+import path from "path"
+import vm from "vm"
+import * as changeCase from "change-case"
+import prompts from "prompts"
 
 function streamToString(readable) {
   if (!(readable instanceof stream.Readable)) {
@@ -32,8 +36,6 @@ function streamToString(readable) {
   })
 }
 
-const execAsync = promisify(cp.exec)
-
 @autobind
 export class GitExtraTool {
   constructor(toolName, log) {
@@ -57,7 +59,7 @@ export class GitExtraTool {
 
     newCmds.forEach((cmd) => {
       if (!!exists[cmd]) {
-        throw new Error(`Command '${cmd}' does not exist.  Please install it.`)
+        throw new Error(`Command '${cmd}' does not exist. Please install it.`)
       } else {
         this.cmds.add(cmd)
       }
@@ -65,28 +67,26 @@ export class GitExtraTool {
   }
 
   async getRemotes() {
-    await this.ensureCommands(["git"])
-
-    const result = await execAsync("git remote -vv")
+    const result = await childProcess.exec("git remote -vv")
     const output = await streamToString(result.stdout)
     const re = new RegExp(
       "^(?<name>[a-zA-Z0-9-]+)\\s+(?<url>.*)\\s+\\(fetch\\)$",
       "gm"
     )
-    const remotes = []
+    const remotes = {}
     let arr = null
 
     while ((arr = re.exec(output)) !== null) {
       const { name, url } = arr.groups
 
-      remotes.push({ name, ...hostedGitInfo.fromUrl(url) })
+      remotes[name] = hostedGitInfo.fromUrl(url, { noGitPlus: true })
     }
 
     return remotes
   }
 
   async getBranch() {
-    const result = await execAsync("git rev-parse --abbrev-ref HEAD")
+    const result = await childProcess.exec("git rev-parse --abbrev-ref HEAD")
     const branch = streamToString(result.stdout).trim()
 
     if (branch === "HEAD") {
@@ -97,45 +97,40 @@ export class GitExtraTool {
   }
 
   async browse(remoteName) {
+    await this.ensureCommands(["git"])
+
     const remotes = await this.getRemotes()
     const branch = await this.getBranch()
+    const remote = remotes[remoteName]
 
-    for (const remote of remotes) {
-      if (remote.name === remoteName) {
-        const isGitHub = remote.domain === "github.com"
-        let url = `https://${remote.domain}/${remote.user}/${remote.project}/`
-
-        if (isGitHub) {
-          url += `tree/${branch}`
-        } else {
-          url += `src?at=${branch}`
-        }
-
-        this.log.info(`Opening '${url}'...`)
-        open(url, { wait: false })
-        return
-      }
+    if (!remote) {
+      this.log.warning(`No git remote '${remote}' was found`)
+      return
     }
 
-    this.log.warning(`No git remote '${remote}' was found`)
+    remote.committish = branch
+
+    const url = remote.browse("")
+
+    this.log.info(`Opening '${url}'...`)
+
+    await open(url, { wait: false })
   }
 
   async pullRequest({ remoteName, upstreamRemoteName }) {
+    await this.ensureCommands(["git"])
+
     const remotes = await this.getRemotes()
     const branch = await this.getBranch()
-    const originRemote = remotes.find((remote) => remote.name === remoteName)
-    const upstreamRemote = remotes.find(
-      (remote) => remote.name === upstreamRemoteName
-    )
+    const originRemote = remotes[remoteName]
+    const upstreamRemote = remotes[upstreamRemoteName]
 
     if (!originRemote) {
-      this.log.error(`Remote '${remoteName}' was not found`)
-      return
+      throw new Error(`Remote '${remoteName}' was not found`)
     }
 
     if (!upstreamRemote) {
-      this.log.error(`Target remote '${upstreamRemoteName}' was not found`)
-      return
+      throw new Error(`Target remote '${upstreamRemoteName}' was not found`)
     }
 
     let url
@@ -149,21 +144,151 @@ export class GitExtraTool {
     }
 
     this.log.info(`Opening '${url}'...`)
-    open(url, { wait: false })
+    await open(url, { wait: false })
   }
 
-  async quickStart() {
-    // TODO: Pattern a new repository from an existing one
-    // TODO: Clone the repo
-    // TODO: Delete the existing .git directory
-    // TODO: git init again
-    // TODO: Run the .git-extra/customize script
+  async quickStart(options) {
+    await this.ensureCommands(["git", "node"])
+
+    if (!options.url) {
+      throw new Error("A repository URL or directory must be given")
+    }
+
+    const remote = hostedGitInfo.fromUrl(options.url, { noGitPlus: true })
+    let dirName
+    let repoLocation
+
+    if (remote) {
+      repoLocation = info.toString()
+      dirName = options.dirName || remote.project
+    } else {
+      repoLocation = options.url
+      dirName = options.dirName || path.dirname(repoLocation)
+    }
+
+    if (fs.existsSync(dirName)) {
+      if (options.overwrite) {
+        await fs.remove(dirName)
+      } else {
+        throw new Error(
+          `Directory ${dirName} already exists; use --overwrite flag to replace`
+        )
+      }
+    }
+
+    this.log.startSpinner(`Cloning ${repoLocation} into ${dirName}`)
+    await childProcess.exec(`git clone ${repoLocation} ${dirName}`)
+    this.log.stopSpinner()
+
+    this.log.startSpinner(`Resetting repository history`)
+    await fs.remove(path.join(dirName, ".git"))
+    await childProcess.exec(`git init`, { cwd: dirName })
+    await childProcess.exec(`git add -A :/`, { cwd: dirName })
+    await childProcess.exec(`git commit -m 'Initial commit'`, { cwd: dirName })
+    this.log.stopSpinner()
+
+    let customizeScript
+
+    try {
+      customizeScript = await fs.readFile(
+        path.join(dirName, "git-extra-customize.js"),
+        {
+          encoding: "utf8",
+        }
+      )
+    } catch (error) {
+      // No customization script found
+      this.log.error(error.message)
+      return
+    }
+
+    // Full qualify dirName so we can more easily use it to ensure
+    // all customization script paths are under this directory.
+    const fullDirName = path.resolve(dirName)
+    const qualifyPath = (pathName) => {
+      const fullPathName = path.resolve(fullDirName, pathName)
+
+      if (!fullPathName.startsWith(fullDirName)) {
+        throw new Error(`Path ${pathName} not under ${dirName}`)
+      }
+
+      return fullPathName
+    }
+
+    this.log.startSpinner("Customizing project")
+
+    const runContext = vm.createContext({
+      ui: {
+        prompts: async (promptArray) => {
+          this.log.stopSpinnerNoMessage()
+
+          const safePrompts = promptArray.map((prompt) => ({
+            type: "text",
+            name: prompt.name.toString(),
+            message: prompt.message.toString(),
+            validate: (t) => new RegExp(prompt.regex).test(t) || prompt.error,
+          }))
+
+          const response = await prompts(safePrompts)
+
+          this.log.restartSpinner()
+
+          return response
+        },
+      },
+      name: {
+        pascal: changeCase.pascalCase,
+      },
+      fs: {
+        readFile: async (fileName) =>
+          fs.readFile(qualifyPath(fileName), { encoding: "utf8" }),
+        writeFile: async (fileName, contents) =>
+          fs.writeFile(qualifyPath(fileName), contents),
+        remove: async (pathName) => fs.remove(qualifyPath(pathName)),
+        move: async (fromFileName, toFileName) =>
+          fs.move(qualifyPath(fromFileName), qualifyPath(toFileName)),
+        ensureFile: async (fileName) => fs.ensureFile(qualifyPath(fileName)),
+        mkdir: async (dirName) => fs.mkdirp(qualifyPath(dirName)),
+      },
+      path: {
+        join: (...pathNames) => path.join(...pathNames),
+        dirname: (pathName) => path.dirname(pathName),
+        basename: (pathName, ext) => path.basename(pathName, ext),
+        extname: (pathName) => path.extname(pathName),
+      },
+      git: {
+        forceAdd: async (fileName) =>
+          childProcess.exec(`git add -f ${qualifyPath(fileName)}`, {
+            cwd: dirName,
+          }),
+      },
+    })
+
+    try {
+      await new vm.Script(
+        "(async () => {" + customizeScript + "\n})()"
+      ).runInContext(runContext)
+    } catch (error) {
+      this.log.stopSpinnerNoMessage()
+      if (this.debug) {
+        throw error
+      } else {
+        throw new Error(`Customization script error. ${error.message}`)
+      }
+    }
+
+    await childProcess.exec("git add -A :/", { cwd: dirName })
+    await childProcess.exec("git commit -m 'After customization'", {
+      cwd: dirName,
+    })
+
+    this.log.stopSpinner()
   }
 
   async run(argv) {
     const options = {
       string: ["remote", "to-remote"],
-      boolean: ["help", "version", "debug"],
+      boolean: ["help", "version", "debug", "overwrite"],
       alias: {
         r: "remote",
         t: "to-remote",
@@ -231,6 +356,7 @@ Options:
 
         break
 
+      case "qst":
       case "quick-start":
         if (args.help && !subCommand) {
           this.log.info(
@@ -245,7 +371,11 @@ running the 'git-extra-customize.js' customization script if there is one.
           return 0
         }
 
-        await this.quickStart({ repo: args._[1], directory: args._[2] })
+        await this.quickStart({
+          url: args._[1],
+          dirName: args._[2],
+          overwrite: args.overwrite,
+        })
         break
 
       case "help":

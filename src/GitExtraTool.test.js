@@ -1,19 +1,6 @@
 import { GitExtraTool } from "./GitExtraTool"
-import tmp from "tmp-promise"
 
 const toolName = "git-extra"
-let tmpDirObj = null
-
-beforeAll(async (done) => {
-  tmpDirObj = await tmp.dir()
-  done()
-})
-
-afterAll(() => {
-  if (tmpDirObj) {
-    tmpDirObj.cleanup()
-  }
-})
 
 function getMockLog() {
   return {
