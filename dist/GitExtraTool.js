@@ -189,14 +189,16 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
       dirName = options.dirName || remote.project;
     } else {
       repoLocation = options.url;
-      dirName = options.dirName || _path.default.dirname(repoLocation);
+      dirName = options.dirName || _path.default.basename(repoLocation);
     }
+
+    const fullDirName = _path.default.resolve(dirName);
 
     if (_fsExtra.default.existsSync(dirName)) {
       if (options.overwrite) {
         await _fsExtra.default.remove(dirName);
       } else {
-        throw new Error(`Directory ${dirName} already exists; use --overwrite flag to replace`);
+        throw new Error(`Directory '${fullDirName}' already exists; use --overwrite flag to replace`);
       }
     }
 
@@ -229,8 +231,6 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
     // all customization script paths are under this directory.
 
 
-    const fullDirName = _path.default.resolve(dirName);
-
     const qualifyPath = pathName => {
       const fullPathName = _path.default.resolve(fullDirName, pathName);
 
@@ -256,20 +256,21 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
           const response = await (0, _prompts.default)(safePrompts);
           this.log.restartSpinner();
           return response;
-        }
+        },
+        log: message => console.log(message)
       },
       name: {
         pascal: changeCase.pascalCase
       },
       fs: {
-        readFile: async fileName => _fsExtra.default.readFile(qualifyPath(fileName), {
+        readFile: fileName => _fsExtra.default.readFile(qualifyPath(fileName), {
           encoding: "utf8"
         }),
-        writeFile: async (fileName, contents) => _fsExtra.default.writeFile(qualifyPath(fileName), contents),
-        remove: async pathName => _fsExtra.default.remove(qualifyPath(pathName)),
-        move: async (fromFileName, toFileName) => _fsExtra.default.move(qualifyPath(fromFileName), qualifyPath(toFileName)),
-        ensureFile: async fileName => _fsExtra.default.ensureFile(qualifyPath(fileName)),
-        mkdir: async dirName => _fsExtra.default.mkdirp(qualifyPath(dirName))
+        writeFile: (fileName, contents) => _fsExtra.default.writeFile(qualifyPath(fileName), contents),
+        remove: pathName => _fsExtra.default.remove(qualifyPath(pathName)),
+        move: (fromFileName, toFileName) => _fsExtra.default.move(qualifyPath(fromFileName), qualifyPath(toFileName)),
+        ensureFile: fileName => _fsExtra.default.ensureFile(qualifyPath(fileName)),
+        mkdir: dirName => _fsExtra.default.mkdirp(qualifyPath(dirName))
       },
       path: {
         join: (...pathNames) => _path.default.join(...pathNames),
