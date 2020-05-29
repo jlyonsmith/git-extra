@@ -163,15 +163,17 @@ export class GitExtraTool {
       dirName = options.dirName || remote.project
     } else {
       repoLocation = options.url
-      dirName = options.dirName || path.dirname(repoLocation)
+      dirName = options.dirName || path.basename(repoLocation)
     }
+
+    const fullDirName = path.resolve(dirName)
 
     if (fs.existsSync(dirName)) {
       if (options.overwrite) {
         await fs.remove(dirName)
       } else {
         throw new Error(
-          `Directory ${dirName} already exists; use --overwrite flag to replace`
+          `Directory '${fullDirName}' already exists; use --overwrite flag to replace`
         )
       }
     }
@@ -204,7 +206,6 @@ export class GitExtraTool {
 
     // Full qualify dirName so we can more easily use it to ensure
     // all customization script paths are under this directory.
-    const fullDirName = path.resolve(dirName)
     const qualifyPath = (pathName) => {
       const fullPathName = path.resolve(fullDirName, pathName)
 
@@ -235,20 +236,21 @@ export class GitExtraTool {
 
           return response
         },
+        log: (message) => console.log(message),
       },
       name: {
         pascal: changeCase.pascalCase,
       },
       fs: {
-        readFile: async (fileName) =>
+        readFile: (fileName) =>
           fs.readFile(qualifyPath(fileName), { encoding: "utf8" }),
-        writeFile: async (fileName, contents) =>
+        writeFile: (fileName, contents) =>
           fs.writeFile(qualifyPath(fileName), contents),
-        remove: async (pathName) => fs.remove(qualifyPath(pathName)),
-        move: async (fromFileName, toFileName) =>
+        remove: (pathName) => fs.remove(qualifyPath(pathName)),
+        move: (fromFileName, toFileName) =>
           fs.move(qualifyPath(fromFileName), qualifyPath(toFileName)),
-        ensureFile: async (fileName) => fs.ensureFile(qualifyPath(fileName)),
-        mkdir: async (dirName) => fs.mkdirp(qualifyPath(dirName)),
+        ensureFile: (fileName) => fs.ensureFile(qualifyPath(fileName)),
+        mkdir: (dirName) => fs.mkdirp(qualifyPath(dirName)),
       },
       path: {
         join: (...pathNames) => path.join(...pathNames),
