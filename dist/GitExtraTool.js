@@ -185,7 +185,7 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
     let repoLocation;
 
     if (remote) {
-      repoLocation = info.toString();
+      repoLocation = remote.toString();
       dirName = options.dirName || remote.project;
     } else {
       repoLocation = options.url;
