@@ -1,53 +1,72 @@
 {
-  filenames: [
-    'package.json',
-    'src/version.js',
-    'scratch/version.tag.txt',
-    'scratch/version.desc.txt',
-  ],
-  buildFormat: 'full',
-  tags: {
+  vars: {
     major: 3,
     minor: 3,
     patch: 2,
     build: 20200530,
     revision: 0,
     tz: 'America/Los_Angeles',
-    startYear: '2017',
-    sequence: 20,
+    sequence: 6,
   },
-  fileTypes: [
+  calcVars: {
+    nextBuild: '{now.year * 10000 + (now.month + 1) * 100 + now.day}',
+  },
+  operations: {
+    incrMajor: '{major += 1; minor = 0; patch = 0; revision = 0; build = nextBuild}',
+    incrMinor: '{minor += 1; patch = 0; revision = 0; build = nextBuild}',
+    incrPatch: '{patch += 1; revision = 0; build = nextBuild}',
+    incrRevision: '{revision += 1; build = nextBuild}',
+  },
+  targets: [
     {
-      name: 'Node Package',
-      glob: '**/package.json',
-      update: {
+      description: 'Node package',
+      files: [
+        'package.json',
+      ],
+      action: {
+        updates: [
+    {
         search: '^(?<begin> *"version" *: *")\\d+\\.\\d+\\.\\d+(?<end>" *, *)$',
-        replace: '${begin}${major}.${minor}.${patch}${end}',
+            replace: '{`${begin}${major}.${minor}.${patch}${end}`}',
+          },
+        ],
       },
     },
     {
-      name: 'Javascript File',
-      glob: '**/version.js',
+      description: 'TS version',
+      files: [
+        'src/version.ts',
+      ],
+      action: {
       updates: [
         {
           search: '^(?<begin>\\s*export\\s*const\\s*version\\s*=\\s*")\\d+\\.\\d+\\.\\d+(?<end>"\\s*)$',
-          replace: '${begin}${major}.${minor}.${patch}${end}',
+            replace: '{`${begin}${major}.${minor}.${patch}${end}`}',
         },
         {
-          search: '^(?<begin>\\s*export\\s*const\\s*fullVersion\\s*=\\s*")\\d+\\.\\d+\\.\\d+-\\d+\\.\\d+(?<end>"\\s*)$',
-          replace: '${begin}${major}.${minor}.${patch}-${build}.${revision}${end}',
+            search: '^(?<begin>\\s*export\\s*const\\s*fullVersion\\s*=\\s*")\\d+\\.\\d+\\.\\d+\\+\\d+\\.\\d+(?<end>"\\s*)$',
+            replace: '{`${begin}${major}.${minor}.${patch}+${build}.${revision}${end}`}',
         },
       ],
     },
-    {
-      name: 'Commit tag file',
-      glob: '**/*.tag.txt',
-      write: '${major}.${minor}.${patch}',
     },
     {
-      name: 'Commit tag description file',
-      glob: '**/*.desc.txt',
-      write: 'Version ${major}.${minor}.${patch}-${build}.${revision}',
+      description: 'Git tag name',
+      files: [
+        'scratch/version.tag.txt',
+      ],
+      action: {
+        write: '{`${major}.${minor}.${patch}`}',
+      },
+    },
+    {
+      description: 'Git tag description',
+      files: [
+        'scratch/version.desc.txt',
+      ],
+      action: {
+        write: '{`Version ${major}.${minor}.${patch}+${build}.${revision}`}',
+      },
     },
   ],
 }

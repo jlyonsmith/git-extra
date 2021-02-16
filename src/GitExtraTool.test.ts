@@ -21,7 +21,7 @@ function getOutput(fn) {
 
 test("--help", async (done) => {
   const mockLog = getMockLog()
-  const tool = new GitExtraTool(toolName, mockLog)
+  const tool = new GitExtraTool({ toolName, log: mockLog })
 
   const exitCode = await tool.run(["--help"])
   expect(exitCode).toBe(0)
@@ -31,7 +31,7 @@ test("--help", async (done) => {
 
 test("--version", async (done) => {
   const mockLog = getMockLog()
-  const tool = new GitExtraTool(toolName, mockLog)
+  const tool = new GitExtraTool({ toolName, log: mockLog })
   const exitCode = await tool.run(["--version"])
 
   expect(exitCode).toBe(0)

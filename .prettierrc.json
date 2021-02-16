@@ -2,5 +2,5 @@
   "semi": false,
   "arrowParens": "always",
   "trailingComma": "es5",
-  "jsxBracketSameLine": true,
+  "jsxBracketSameLine": true
 }

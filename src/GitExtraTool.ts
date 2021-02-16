@@ -1,6 +1,5 @@
 import parseArgs from "minimist"
 import { fullVersion } from "./version"
-import autobind from "autobind-decorator"
 import * as childProcess from "promisify-child-process"
 import commandExists from "command-exists"
 import stream from "stream"
@@ -21,7 +20,11 @@ function streamToString(readable) {
     let string = ""
 
     readable.on("readable", (buffer) => {
-      string += buffer.read().toString()
+      let data
+
+      while ((data = this.read())) {
+        string += data.toString()
+      }
     })
 
     readable.on("end", () => {
@@ -31,24 +34,19 @@ function streamToString(readable) {
     readable.on("error", (error) => {
       reject(error)
     })
-
-    readable.pipe(writeable)
   })
 }
 
-@autobind
 export class GitExtraTool {
-  constructor(toolName, log) {
-    const options = typeof toolName === "object" ? toolName : null
+  toolName: string
+  log: any
+  debug: boolean
+  cmds: Set<string>
 
-    if (options) {
-      this.toolName = options.toolName
-      this.log = options.log
-      this.debug = options.debug
-    } else {
-      this.toolName = toolName
-      this.log = log
-    }
+  constructor(options) {
+    this.toolName = options.toolName
+    this.log = options.log
+    this.debug = options.debug
   }
 
   async ensureCommands(cmds) {
@@ -87,7 +85,7 @@ export class GitExtraTool {
 
   async getBranch() {
     const result = await childProcess.exec("git rev-parse --abbrev-ref HEAD")
-    const branch = streamToString(result.stdout).trim()
+    let branch = streamToString(result.stdout).trim()
 
     if (branch === "HEAD") {
       branch = "master"

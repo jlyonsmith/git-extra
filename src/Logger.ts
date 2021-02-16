@@ -1,13 +1,29 @@
 import readline from "readline"
 import chalk from "chalk"
-import autobind from "autobind-decorator"
 import os from "os"
 
-@autobind
-export class Log {
-  static spinnerChars = "⠄⠆⠇⠋⠙⠸⠰⠠⠰⠸⠙⠋⠇⠆"
+export interface Logger {
+  info(...params: string[])
+  error(...params: string[])
+  warning(...params: string[])
+  startSpinner(line: string)
+  restartSpinner()
+  stopSpinnerNoMessage()
+  stopSpinner()
+}
 
-  constructor(container = {}) {
+export class ConsoleLogger {
+  static spinnerChars = "⠄⠆⠇⠋⠙⠸⠰⠠⠰⠸⠙⠋⠇⠆"
+  readline: any
+  stdout: any
+  stderr: any
+  setInterval: any
+  clearInterval: any
+  spinnerDelay: number
+  spinnerHandle: any
+  spinnerTitle: string
+
+  constructor(container: any = {}) {
     this.readline = container.readline ?? readline
     this.stdout = container.stdout ?? process.stdout
     this.stderr = container.stderr ?? process.stderr
@@ -42,9 +58,11 @@ export class Log {
     const spinnerTick = () => {
       this.readline.clearLine(this.stdout, 0)
       this.readline.cursorTo(this.stdout, 0)
-      this.stdout.write(Log.spinnerChars[index] + " " + this.spinnerTitle)
+      this.stdout.write(
+        ConsoleLogger.spinnerChars[index] + " " + this.spinnerTitle
+      )
 
-      index = (index + 1) % Log.spinnerChars.length
+      index = (index + 1) % ConsoleLogger.spinnerChars.length
     }
 
     this.spinnerTitle = line
