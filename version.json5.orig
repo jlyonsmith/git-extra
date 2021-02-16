@@ -6,6 +6,7 @@
     build: 20200608,
     revision: 0,
     tz: 'America/Los_Angeles',
+<<<<<<< HEAD
     sequence: 6,
   },
   calcVars: {
@@ -16,6 +17,10 @@
     incrMinor: '{minor += 1; patch = 0; revision = 0; build = nextBuild}',
     incrPatch: '{patch += 1; revision = 0; build = nextBuild}',
     incrRevision: '{revision += 1; build = nextBuild}',
+=======
+    startYear: '2017',
+    sequence: 21,
+>>>>>>> 37407b9285a2cbe8f8d2b5ced44e5ffdf1f9abaa
   },
   targets: [
     {

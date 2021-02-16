@@ -27,6 +27,8 @@ var _path = _interopRequireDefault(require("path"));
 
 var _vm = _interopRequireDefault(require("vm"));
 
+var _os = _interopRequireDefault(require("os"));
+
 var changeCase = _interopRequireWildcard(require("change-case"));
 
 var _prompts = _interopRequireDefault(require("prompts"));
@@ -244,6 +246,10 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
     this.log.startSpinner("Customizing project");
 
     const runContext = _vm.default.createContext({
+      args: {
+        projectName: _path.default.basename(dirName),
+        userName: _os.default.userInfo().username
+      },
       ui: {
         prompts: async promptArray => {
           this.log.stopSpinnerNoMessage();
@@ -251,6 +257,7 @@ let GitExtraTool = (0, _autobindDecorator.default)(_class = class GitExtraTool {
             type: "text",
             name: prompt.name.toString(),
             message: prompt.message.toString(),
+            initial: prompt.initial,
             validate: t => new RegExp(prompt.regex).test(t) || prompt.error
           }));
           const response = await (0, _prompts.default)(safePrompts);

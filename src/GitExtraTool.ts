@@ -8,6 +8,7 @@ import hostedGitInfo from "hosted-git-info"
 import fs from "fs-extra"
 import path from "path"
 import vm from "vm"
+import os from "os"
 import * as changeCase from "change-case"
 import prompts from "prompts"
 
@@ -217,6 +218,10 @@ export class GitExtraTool {
     this.log.startSpinner("Customizing project")
 
     const runContext = vm.createContext({
+      args: {
+        projectName: path.basename(dirName),
+        userName: os.userInfo().username,
+      },
       ui: {
         prompts: async (promptArray) => {
           this.log.stopSpinnerNoMessage()
@@ -225,6 +230,7 @@ export class GitExtraTool {
             type: "text",
             name: prompt.name.toString(),
             message: prompt.message.toString(),
+            initial: prompt.initial,
             validate: (t) => new RegExp(prompt.regex).test(t) || prompt.error,
           }))
 
