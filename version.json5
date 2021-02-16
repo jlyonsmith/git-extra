@@ -3,8 +3,8 @@
     major: 3,
     minor: 4,
     patch: 0,
-    build: 20200608,
-    revision: 0,
+    build: 20210316,
+    revision: 1,
     tz: 'America/Los_Angeles',
     sequence: 6,
   },
@@ -19,14 +19,28 @@
   },
   targets: [
     {
+      description: 'License file',
+      files: [
+        'LICENSE',
+      ],
+      action: {
+        updates: [
+          {
+            search: '(?<begin>Copyright \\(c\\) )[0-9]{4}',
+            replace: '{`${begin}${now.year}`}',
+          },
+        ],
+      },
+    },
+    {
       description: 'Node package',
       files: [
         'package.json',
       ],
       action: {
         updates: [
-    {
-        search: '^(?<begin> *"version" *: *")\\d+\\.\\d+\\.\\d+(?<end>" *, *)$',
+          {
+            search: '^(?<begin> *"version" *: *")\\d+\\.\\d+\\.\\d+(?<end>" *, *)$',
             replace: '{`${begin}${major}.${minor}.${patch}${end}`}',
           },
         ],
@@ -38,17 +52,17 @@
         'src/version.ts',
       ],
       action: {
-      updates: [
-        {
-          search: '^(?<begin>\\s*export\\s*const\\s*version\\s*=\\s*")\\d+\\.\\d+\\.\\d+(?<end>"\\s*)$',
+        updates: [
+          {
+            search: '^(?<begin>\\s*export\\s*const\\s*shortVersion\\s*=\\s*")\\d+\\.\\d+\\.\\d+(?<end>"\\s*)$',
             replace: '{`${begin}${major}.${minor}.${patch}${end}`}',
-        },
-        {
-            search: '^(?<begin>\\s*export\\s*const\\s*fullVersion\\s*=\\s*")\\d+\\.\\d+\\.\\d+\\+\\d+\\.\\d+(?<end>"\\s*)$',
+          },
+          {
+            search: '^(?<begin>\\s*export\\s*const\\s*fullVersion\\s*=\\s*")\\d+\\.\\d+\\.\\d+[+-]\\d+\\.\\d+(?<end>"\\s*)$',
             replace: '{`${begin}${major}.${minor}.${patch}+${build}.${revision}${end}`}',
-        },
-      ],
-    },
+          },
+        ],
+      },
     },
     {
       description: 'Git tag name',
