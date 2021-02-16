@@ -152,7 +152,7 @@ export class GitExtraTool {
     // Read checking the ~/.git-extra/directory.json file
     const catalogFileName = path.join(
       process.env["HOME"],
-      ".git-extra/catalog.json"
+      ".git-extra/catalog.json5"
     )
 
     await fs.ensureDir(path.dirname(catalogFileName))
@@ -170,14 +170,14 @@ export class GitExtraTool {
     if (!content) {
       try {
         const { body } = await got(
-          "https://raw.githubusercontent.com/jlyonsmith/git-extra/master/catalog.json"
+          "https://raw.githubusercontent.com/jlyonsmith/git-extra/master/catalog.json5"
         )
         content = body
       } catch (error) {
-        throw new Error(`Unable to GET catalog.json. ${error.message}`)
+        throw new Error(`Unable to GET catalog.json5. ${error.message}`)
       }
 
-      await fs.writeFile(content, catalogFileName)
+      await fs.writeFile(catalogFileName, content)
     }
 
     return JSON5.parse(content)
@@ -223,7 +223,7 @@ export class GitExtraTool {
 
     if (options.overwrite) {
       await fs.remove(dirName)
-    } else {
+    } else if (fs.pathExistsSync(dirName)) {
       throw new Error(
         `Directory '${fullDirName}' already exists; use --overwrite flag to replace`
       )
@@ -292,7 +292,7 @@ export class GitExtraTool {
         },
         log: (message) => console.log(message),
       },
-      name: {
+      changeCase: {
         pascal: changeCase.pascalCase,
       },
       fs: {
@@ -345,10 +345,7 @@ export class GitExtraTool {
   async quickStartList() {
     const catalog = await this.readCatalogFile()
 
-    const width =
-      Object.keys(catalog)
-        .map((k) => catalog[k].length)
-        .reduce((a, c) => Math.max(c.length, a), 0) + 2
+    const width = Math.max(...Object.keys(catalog).map((k) => k.length)) + 2
 
     for (const key of Object.keys(catalog)) {
       const entry = catalog[key]
@@ -448,9 +445,9 @@ running the 'git-extra-customize.js' customization script if there is one.
 
 Options:
   --overwrite   Overwrite any existing project
-  --list, -l    List available projects with their project codes in from '~/.git-extra/catalog.json'
+  --list, -l    List available projects with their project codes in from '~/.git-extra/catalog.json5'
                 If the file does not exist it will be created by copying down
-                https://raw.githubusercontent.com/jlyonsmith/git-extra/master/catalog.json
+                https://raw.githubusercontent.com/jlyonsmith/git-extra/master/catalog.json5
 `
           )
           return 0
