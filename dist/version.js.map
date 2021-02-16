@@ -1,1 +1,1 @@
-{"version":3,"sources":["../src/version.js"],"names":["version","fullVersion"],"mappings":";;;;;;AAAO,MAAMA,OAAO,GAAG,OAAhB;;AACA,MAAMC,WAAW,GAAG,kBAApB","sourcesContent":["export const version = \"3.4.0\"\nexport const fullVersion = \"3.4.0-20200608.0\"\n"],"file":"version.js"}
+{"version":3,"file":"version.js","sourceRoot":"","sources":["../src/version.ts"],"names":[],"mappings":";;;AAAa,QAAA,YAAY,GAAG,OAAO,CAAA;AACtB,QAAA,WAAW,GAAG,kBAAkB,CAAA"}
