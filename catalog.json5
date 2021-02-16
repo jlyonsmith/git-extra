@@ -1,0 +1,14 @@
+{
+  "js-package-template": {
+    description: "JS package template",
+    url: "https://github.com/jlyonsmith/js-package-template.git",
+  },
+  "node-cli-tool-template": {
+    description: "Node CLI tool template",
+    url: "https://github.com/jlyonsmith/node-cli-tool-template.git",
+  },
+  "phaser-template": {
+    description: "Phaser game template",
+    url: "https://github.com/jlyonsmith/phaser-template.git",
+  },
+}

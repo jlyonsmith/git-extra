@@ -11,6 +11,8 @@ import vm from "vm"
 import os from "os"
 import * as changeCase from "change-case"
 import prompts from "prompts"
+import got from "got"
+import JSON5 from "@johnls/json5"
 
 function streamToString(readable) {
   if (!(readable instanceof stream.Readable)) {
@@ -146,35 +148,85 @@ export class GitExtraTool {
     await open(url, { wait: false })
   }
 
+  async readCatalogFile() {
+    // Read checking the ~/.git-extra/directory.json file
+    const catalogFileName = path.join(
+      process.env["HOME"],
+      ".git-extra/catalog.json"
+    )
+
+    await fs.ensureDir(path.dirname(catalogFileName))
+
+    let content = null
+
+    try {
+      content = await fs.readFile(catalogFileName)
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        throw error
+      }
+    }
+
+    if (!content) {
+      try {
+        const { body } = await got(
+          "https://raw.githubusercontent.com/jlyonsmith/git-extra/master/catalog.json"
+        )
+        content = body
+      } catch (error) {
+        throw new Error(`Unable to GET catalog.json. ${error.message}`)
+      }
+
+      await fs.writeFile(content, catalogFileName)
+    }
+
+    return JSON5.parse(content)
+  }
+
   async quickStart(options) {
     await this.ensureCommands(["git", "node"])
 
     if (!options.url) {
-      throw new Error("A repository URL or directory must be given")
+      throw new Error("A repository URL a code must be given")
     }
 
-    const remote = hostedGitInfo.fromUrl(options.url, { noGitPlus: true })
     let dirName
     let repoLocation
 
-    if (remote) {
-      repoLocation = remote.toString()
-      dirName = options.dirName || remote.project
+    if (options.url.startsWith("file://")) {
+      repoLocation = options.url.substring(7)
+      dirName = options.dirName ?? path.basename(repoLocation)
     } else {
-      repoLocation = options.url
-      dirName = options.dirName || path.basename(repoLocation)
+      const remote = hostedGitInfo.fromUrl(options.url, { noGitPlus: true })
+
+      if (remote) {
+        // It's a valid hosted git remote
+        repoLocation = remote.toString()
+        dirName = options.dirName ?? remote.project
+      } else {
+        // Not a hosted git URL
+        const catalog = await this.readCatalogFile()
+
+        repoLocation = catalog[options.url]?.url
+
+        if (!repoLocation) {
+          throw new Error(`'${options.url}' not fount in catalog`)
+        }
+
+        dirName = options.dirName ?? options.url
+      }
     }
 
+    // Full qualify dirName so we can more easily use it to ensure
+    // all customization script paths are under this directory.
     const fullDirName = path.resolve(dirName)
 
-    if (fs.existsSync(dirName)) {
-      if (options.overwrite) {
-        await fs.remove(dirName)
-      } else {
-        throw new Error(
-          `Directory '${fullDirName}' already exists; use --overwrite flag to replace`
-        )
-      }
+    if (options.overwrite) {
+      await fs.remove(dirName)
+    } else {
+      throw new Error(
+        `Directory '${fullDirName}' already exists; use --overwrite flag to replace`
+      )
     }
 
     this.log.startSpinner(`Cloning ${repoLocation} into ${dirName}`)
@@ -203,8 +255,6 @@ export class GitExtraTool {
       return
     }
 
-    // Full qualify dirName so we can more easily use it to ensure
-    // all customization script paths are under this directory.
     const qualifyPath = (pathName) => {
       const fullPathName = path.resolve(fullDirName, pathName)
 
@@ -292,13 +342,33 @@ export class GitExtraTool {
     this.log.stopSpinner()
   }
 
+  async quickStartList() {
+    const catalog = await this.readCatalogFile()
+
+    const width =
+      Object.keys(catalog)
+        .map((k) => catalog[k].length)
+        .reduce((a, c) => Math.max(c.length, a), 0) + 2
+
+    for (const key of Object.keys(catalog)) {
+      const entry = catalog[key]
+
+      this.log.info(
+        `${key.padEnd(width)}${entry.description}\n${"".padEnd(width)}${
+          entry.url
+        }`
+      )
+    }
+  }
+
   async run(argv) {
     const options = {
       string: ["remote", "to-remote"],
-      boolean: ["help", "version", "debug", "overwrite"],
+      boolean: ["help", "version", "debug", "overwrite", "list"],
       alias: {
         r: "remote",
         t: "to-remote",
+        l: "list",
       },
       default: {
         remote: "origin",
@@ -367,22 +437,34 @@ Options:
       case "quick-start":
         if (args.help && !subCommand) {
           this.log.info(
-            `Usage: ${this.toolName} quick-start [<options>] <repo> [<directory>]
+            `Usage:
+  ${this.toolName} quick-start [--overwrite] [<catalog-id> | file://<dir> | <hosted-git-url>] [<target-dir>]
+  ${this.toolName} quick-start [--list | -l]
 
 Description:
 
 Quickly start a project by doing a bare clone of an existing repository, then
 running the 'git-extra-customize.js' customization script if there is one.
+
+Options:
+  --overwrite   Overwrite any existing project
+  --list, -l    List available projects with their project codes in from '~/.git-extra/catalog.json'
+                If the file does not exist it will be created by copying down
+                https://raw.githubusercontent.com/jlyonsmith/git-extra/master/catalog.json
 `
           )
           return 0
         }
 
-        await this.quickStart({
-          url: args._[1],
-          dirName: args._[2],
-          overwrite: args.overwrite,
-        })
+        if (args.list) {
+          await this.quickStartList()
+        } else {
+          await this.quickStart({
+            url: args._[1],
+            dirName: args._[2],
+            overwrite: args.overwrite,
+          })
+        }
         break
 
       case "help":
