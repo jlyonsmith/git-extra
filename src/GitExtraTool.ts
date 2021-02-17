@@ -200,7 +200,11 @@ export class GitExtraTool {
       const remote = hostedGitInfo.fromUrl(options.url, { noGitPlus: true })
 
       if (remote) {
-        // It's a valid hosted git remote
+        if (remote.default !== "https") {
+          throw new Error("Only HTTPS templates URLs are supported")
+        }
+
+        // It's a valid hosted Git remote
         repoLocation = remote.toString()
         dirName = options.dirName ?? remote.project
       } else {
@@ -210,7 +214,9 @@ export class GitExtraTool {
         repoLocation = catalog[options.url]?.url
 
         if (!repoLocation) {
-          throw new Error(`'${options.url}' not fount in catalog`)
+          throw new Error(`'${options.url}' not found in catalog`)
+        } else if (!repoLocation.startsWith("https://")) {
+          throw new Error(`Catalog entry '${options.url}' must be HTTPS`)
         }
 
         dirName = options.dirName ?? options.url
