@@ -197,7 +197,10 @@ class GitExtraTool {
             else {
                 const remote = hosted_git_info_1.default.fromUrl(options.url, { noGitPlus: true });
                 if (remote) {
-                    // It's a valid hosted git remote
+                    if (remote.default !== "https") {
+                        throw new Error("Only HTTPS templates URLs are supported");
+                    }
+                    // It's a valid hosted Git remote
                     repoLocation = remote.toString();
                     dirName = (_b = options.dirName) !== null && _b !== void 0 ? _b : remote.project;
                 }
@@ -206,7 +209,10 @@ class GitExtraTool {
                     const catalog = yield this.readCatalogFile();
                     repoLocation = (_c = catalog[options.url]) === null || _c === void 0 ? void 0 : _c.url;
                     if (!repoLocation) {
-                        throw new Error(`'${options.url}' not fount in catalog`);
+                        throw new Error(`'${options.url}' not found in catalog`);
+                    }
+                    else if (!repoLocation.startsWith("https://")) {
+                        throw new Error(`Catalog entry '${options.url}' must be HTTPS`);
                     }
                     dirName = (_d = options.dirName) !== null && _d !== void 0 ? _d : options.url;
                 }
