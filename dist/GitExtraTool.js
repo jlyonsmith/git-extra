@@ -246,6 +246,7 @@ class GitExtraTool {
                 this.log.error(error.message);
                 return;
             }
+            // Ensure all paths are under the project
             const qualifyPath = (pathName) => {
                 const fullPathName = path_1.default.resolve(fullDirName, pathName);
                 if (!fullPathName.startsWith(fullDirName)) {
@@ -276,7 +277,17 @@ class GitExtraTool {
                     log: (message) => console.log(message),
                 },
                 changeCase: {
+                    camel: changeCase.camelCase,
+                    proper: changeCase.capitalCase,
+                    constant: changeCase.constantCase,
+                    dot: changeCase.dotCase,
+                    header: changeCase.headerCase,
+                    word: changeCase.noCase,
+                    param: changeCase.paramCase,
                     pascal: changeCase.pascalCase,
+                    path: changeCase.pathCase,
+                    sentence: changeCase.sentenceCase,
+                    snake: changeCase.snakeCase,
                 },
                 fs: {
                     readFile: (fileName) => fs_extra_1.default.readFile(qualifyPath(fileName), { encoding: "utf8" }),
@@ -284,7 +295,15 @@ class GitExtraTool {
                     remove: (pathName) => fs_extra_1.default.remove(qualifyPath(pathName)),
                     move: (fromFileName, toFileName) => fs_extra_1.default.move(qualifyPath(fromFileName), qualifyPath(toFileName)),
                     ensureFile: (fileName) => fs_extra_1.default.ensureFile(qualifyPath(fileName)),
-                    mkdir: (dirName) => fs_extra_1.default.mkdirp(qualifyPath(dirName)),
+                    ensureDir: (dirName) => fs_extra_1.default.ensureDir(qualifyPath(dirName)),
+                    inPlaceUpdate: (fileName, replacements) => __awaiter(this, void 0, void 0, function* () {
+                        const safeFileName = qualifyPath(fileName);
+                        let content = yield fs_extra_1.default.readFile(safeFileName, { encoding: "utf8" });
+                        for (const [searchValue, replaceValue] of replacements) {
+                            content = content.replace(searchValue, replaceValue);
+                        }
+                        yield fs_extra_1.default.writeFile(safeFileName, content);
+                    }),
                 },
                 path: {
                     join: (...pathNames) => path_1.default.join(...pathNames),
