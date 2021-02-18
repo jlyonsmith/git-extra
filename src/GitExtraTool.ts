@@ -261,6 +261,7 @@ export class GitExtraTool {
       return
     }
 
+    // Ensure all paths are under the project
     const qualifyPath = (pathName) => {
       const fullPathName = path.resolve(fullDirName, pathName)
 
@@ -299,7 +300,17 @@ export class GitExtraTool {
         log: (message) => console.log(message),
       },
       changeCase: {
+        camel: changeCase.camelCase,
+        proper: changeCase.capitalCase,
+        constant: changeCase.constantCase,
+        dot: changeCase.dotCase,
+        header: changeCase.headerCase,
+        word: changeCase.noCase,
+        param: changeCase.paramCase,
         pascal: changeCase.pascalCase,
+        path: changeCase.pathCase,
+        sentence: changeCase.sentenceCase,
+        snake: changeCase.snakeCase,
       },
       fs: {
         readFile: (fileName) =>
@@ -310,7 +321,17 @@ export class GitExtraTool {
         move: (fromFileName, toFileName) =>
           fs.move(qualifyPath(fromFileName), qualifyPath(toFileName)),
         ensureFile: (fileName) => fs.ensureFile(qualifyPath(fileName)),
-        mkdir: (dirName) => fs.mkdirp(qualifyPath(dirName)),
+        ensureDir: (dirName) => fs.ensureDir(qualifyPath(dirName)),
+        inPlaceUpdate: async (fileName, replacements) => {
+          const safeFileName = qualifyPath(fileName)
+          let content = await fs.readFile(safeFileName, { encoding: "utf8" })
+
+          for (const [searchValue, replaceValue] of replacements) {
+            content = content.replace(searchValue, replaceValue)
+          }
+
+          await fs.writeFile(safeFileName, content)
+        },
       },
       path: {
         join: (...pathNames) => path.join(...pathNames),
