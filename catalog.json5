@@ -1,14 +1,22 @@
 {
-  "js-package-template": {
+  "js-package": {
     description: "JS package template",
     url: "https://github.com/jlyonsmith/js-package-template.git",
   },
-  "node-cli-tool-template": {
+  "node-cli": {
     description: "Node CLI tool template",
     url: "https://github.com/jlyonsmith/node-cli-tool-template.git",
   },
-  "phaser-template": {
+  "node-ts-cli": {
+    description: "Node/TypeScript CLI template",
+    url: "https://github.com/jlyonsmith/node-ts-cli-template.git",
+  },
+  phaser: {
     description: "Phaser game template",
     url: "https://github.com/jlyonsmith/phaser-template.git",
+  },
+  "gatsby-mui": {
+    description: "Gatsby with Material-UI template",
+    url: "https://github.com/jlyonsmith/gatsby-mui-template.git",
   },
 }

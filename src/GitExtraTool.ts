@@ -52,14 +52,14 @@ export class GitExtraTool {
     this.debug = options.debug
   }
 
-  async ensureCommands(cmds) {
+  async ensureCommands(cmds): Promise<void> {
     this.cmds = this.cmds || new Set()
 
     const newCmds = cmds.filter((cmd) => !this.cmds.has(cmd))
     const exists = await Promise.all(newCmds.map((cmd) => commandExists(cmd)))
 
     newCmds.forEach((cmd) => {
-      if (!!exists[cmd]) {
+      if (exists[cmd]) {
         throw new Error(`Command '${cmd}' does not exist. Please install it.`)
       } else {
         this.cmds.add(cmd)
